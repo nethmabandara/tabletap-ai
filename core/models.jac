@@ -36,6 +36,7 @@ node Order {
     has status: str = "sent",
         allergy_note: str = "",
         preference_note: str = "",
+        closed_at: str = "",
         created_at: str = "",
         via_ai: bool = False;
 }
@@ -63,6 +64,7 @@ node SongRequest {
         message: str = "",
         wish: str = "",
         status: str = "pending",
+        closed_at: str = "",
         created_at: str = "";
 }
 

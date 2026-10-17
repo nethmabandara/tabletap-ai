@@ -9,9 +9,11 @@ import from ..core.agents { WaiterPlan, ChatTurn }
 import from ..core.waiter { ask_waiter }
 import from ..core.orders { place_order, OrderLine, PlaceResult }
 import from ..core.theme {
+    TAP_HEIGHT,
     button_style, card_style, pill_style, mono_style,
     INK, MUTED, BODY, GROUND, SURFACE, LINE, ACCENT, VEG_FG, WARN_FG, WARN_BG, ALLERGY_FG, ALLERGY_BG,
-    FONT_TEXT, RADIUS_CARD, RADIUS_BUTTON, SP_1, SP_2, SP_3, SP_4
+    FONT_TEXT, RADIUS_CARD, RADIUS_BUTTON, SP_1, SP_2, SP_3, SP_4,
+    FS_LG, FS_MD, FS_SM, FS_XL, FS_XS
 }
 import from .guest { money, NotePills }
 
@@ -32,7 +34,7 @@ def:pub StepsCard(steps: list[str], working: bool) -> JsxElement {
         </div>
         {if not working {
             for (i, st) in enumerate(steps) {
-                <div key={str(i)} style={mono_style() | {"color": BODY, "fontSize": "14px", "padding": "3px 0"}}>{"✓ " + st}</div>
+                <div key={str(i)} style={mono_style() | {"color": BODY, "fontSize": f"{FS_SM}px", "padding": "3px 0"}}>{"✓ " + st}</div>
             }
         }}
     </div>
@@ -40,10 +42,10 @@ def:pub StepsCard(steps: list[str], working: bool) -> JsxElement {
 
 def:pub PlanCard(plan: WaiterPlan, busy: bool, onChange: any, onConfirm: any, sending: bool) -> JsxElement {
     <div style={card_style() | {"padding": f"{SP_3}px", "marginTop": f"{SP_3}px", "opacity": "0.6" if busy else "1"}}>
-        <p style={{"color": INK, "fontSize": "17px", "margin": f"0 0 {SP_2}px"}}>{plan.summary}</p>
+        <p style={{"color": INK, "fontSize": f"{FS_LG}px", "margin": f"0 0 {SP_2}px"}}>{plan.summary}</p>
         {for i in plan.items {
             <div key={i.dish_id} style={{"padding": f"{SP_1}px 0", "borderBottom": f"1px solid {LINE}"}}>
-                <div style={{"display": "flex", "justifyContent": "space-between", "color": INK, "fontSize": "17px"}}>
+                <div style={{"display": "flex", "justifyContent": "space-between", "color": INK, "fontSize": f"{FS_LG}px"}}>
                     <span>
                         {i.dish_name}
                         {if i.is_veg {
@@ -55,7 +57,7 @@ def:pub PlanCard(plan: WaiterPlan, busy: bool, onChange: any, onConfirm: any, se
                     </span>
                     <span style={mono_style()}>{str(i.price * i.qty)}</span>
                 </div>
-                <div style={{"color": MUTED, "fontSize": "14px"}}>{i.reason}</div>
+                <div style={{"color": MUTED, "fontSize": f"{FS_SM}px"}}>{i.reason}</div>
             </div>
         }}
         <div style={{"display": "flex", "justifyContent": "space-between", "padding": f"{SP_2}px 0", "color": INK, "fontWeight": "700"}}>
@@ -155,10 +157,10 @@ def:pub WaiterScreen(code: str, table: str, onBack: any, onSent: any) -> JsxElem
     busy = working or sending;
     return <div style={{"maxWidth": "480px", "margin": "0 auto", "minHeight": "100vh", "backgroundColor": GROUND, "fontFamily": FONT_TEXT}}>
         <div style={{"display": "flex", "alignItems": "center", "gap": f"{SP_3}px", "padding": f"{SP_3}px", "backgroundColor": SURFACE, "borderBottom": f"1px solid {LINE}"}}>
-            <button aria-label="Back to the menu" onClick={lambda { onBack(); }} style={button_style(False) | {"width": "44px", "padding": "0", "fontSize": "22px"}}>←</button>
+            <button aria-label="Back to the menu" onClick={lambda { onBack(); }} style={button_style(False) | {"width": f"{TAP_HEIGHT}px", "padding": "0", "fontSize": f"{FS_XL}px"}}>←</button>
             <div>
-                <div style={{"color": INK, "fontSize": "24px", "fontWeight": "700"}}>AI waiter</div>
-                <div style={{"color": MUTED, "fontSize": "15px"}}>{table + " · nothing is ordered until you confirm"}</div>
+                <div style={{"color": INK, "fontSize": f"{FS_XL}px", "fontWeight": "700"}}>AI waiter</div>
+                <div style={{"color": MUTED, "fontSize": f"{FS_MD}px"}}>{table + " · nothing is ordered until you confirm"}</div>
             </div>
         </div>
         <div style={{"padding": f"{SP_3}px {SP_3}px 240px"}}>
@@ -167,7 +169,7 @@ def:pub WaiterScreen(code: str, table: str, onBack: any, onSent: any) -> JsxElem
             }}
             {for (n, line) in enumerate(guest_lines) {
                 <div key={str(n)} style={{"display": "flex", "justifyContent": "flex-end", "marginTop": f"{SP_2}px"}}>
-                    <div style={{"backgroundColor": INK, "color": SURFACE, "borderRadius": "20px", "padding": f"{SP_2}px {SP_3}px", "maxWidth": "85%", "fontSize": "17px"}}>{line}</div>
+                    <div style={{"backgroundColor": INK, "color": SURFACE, "borderRadius": "20px", "padding": f"{SP_2}px {SP_3}px", "maxWidth": "85%", "fontSize": f"{FS_LG}px"}}>{line}</div>
                 </div>
             }}
             {if working {
@@ -200,11 +202,11 @@ def:pub WaiterScreen(code: str, table: str, onBack: any, onSent: any) -> JsxElem
                             "display": "block", "width": "100%", "boxSizing": "border-box", "resize": "none",
                             "minHeight": f"{BOX_MIN}px", "maxHeight": f"{BOX_MAX}px", "overflowY": "auto",
                             "padding": f"{SP_2}px {SP_3}px", "lineHeight": "24px", "border": f"1px solid {LINE}",
-                            "borderRadius": f"{RADIUS_BUTTON}px", "fontFamily": FONT_TEXT, "fontSize": "16px",
+                            "borderRadius": f"{RADIUS_BUTTON}px", "fontFamily": FONT_TEXT, "fontSize": f"{FS_MD}px",
                             "color": INK, "backgroundColor": SURFACE
                         }}
                     />
-                    <div style={{"textAlign": "right", "fontSize": "12px", "marginTop": "4px", "color": WARN_FG if len(text) >= 450 else MUTED}}>
+                    <div style={{"textAlign": "right", "fontSize": f"{FS_XS}px", "marginTop": "4px", "color": WARN_FG if len(text) >= 450 else MUTED}}>
                         {str(len(text)) + " / " + str(MAX_MESSAGE)}
                     </div>
                 </div>
@@ -212,7 +214,7 @@ def:pub WaiterScreen(code: str, table: str, onBack: any, onSent: any) -> JsxElem
                     type="submit"
                     aria-label="Send"
                     disabled={busy or text.strip() == ""}
-                    style={{"width": "56px", "height": f"{BOX_MIN}px", "marginBottom": "20px", "border": "none", "borderRadius": f"{RADIUS_BUTTON}px", "backgroundColor": INK, "color": SURFACE, "fontSize": "22px", "cursor": "pointer", "opacity": "0.5" if (busy or text.strip() == "") else "1"}}
+                    style={{"width": "56px", "height": f"{BOX_MIN}px", "marginBottom": "20px", "border": "none", "borderRadius": f"{RADIUS_BUTTON}px", "backgroundColor": INK, "color": SURFACE, "fontSize": f"{FS_XL}px", "cursor": "pointer", "opacity": "0.5" if (busy or text.strip() == "") else "1"}}
                 >↑</button>
             </form>
         </div>

@@ -5,9 +5,9 @@ The *_for function refuses with a friendly message (and changes nothing) when th
 no restaurant yet, or when the caller does not have a Manages edge to it.
 """
 
-import from .models { Restaurant, Table, Section, Dish, Order, Manages, HasTable, HasSection, HasDish, Placed }
+import from .models { Restaurant, Table, Section, Dish, Order, SongRequest, Manages, HasTable, HasSection, HasDish, Placed, Requested }
 import from .menu { my_restaurant, all_dishes, section_views, SectionView }
-import from .orders { OrderView, order_view, seconds_since }
+import from .orders { OrderView, order_view, seconds_since, is_open, now_iso }
 
 glob NEXT_STATUS: dict[str, str] = {"sent": "preparing", "preparing": "ready"},
      READY_MINUTES = 60,
@@ -43,11 +43,14 @@ def refusal(rest: Restaurant | None) -> str {
     return "";
 }
 
-"""Pairs of (order, table) for this restaurant's own tables only."""
+"""Pairs of (open order, table) for this restaurant's own tables only. Closed (cleared) orders are history and are not listed."""
 def restaurant_orders(rest: Restaurant) -> list[tuple[Order, Table]] {
     pairs: list[tuple[Order, Table]] = [];
     for table in [rest ->:HasTable:-> [?:Table]] {
         for o in [table ->:Placed:-> [?:Order]] {
+            if not is_open(o) {
+                continue;
+            }
             pairs.append((o, table));
         }
     }
@@ -106,6 +109,37 @@ def set_sold_out_for(rest: Restaurant | None, dish_id: str, value: bool) -> Kitc
     return KitchenResult(ok=False, message="We couldn't find that dish.");
 }
 
+"""Clear a table for the next guests (K-04). Closes (never deletes) the table's open orders and song requests.
+Refused for a table of another restaurant, a table with no open orders, or while any order is still sent or preparing."""
+def clear_table_for(rest: Restaurant | None, table_code: str) -> KitchenResult {
+    problem = refusal(rest);
+    if problem != "" or rest is None {
+        return KitchenResult(ok=False, message=problem);
+    }
+    mine = [t for t in [rest ->:HasTable:-> [?:Table]] if t.code == table_code];
+    if not mine {
+        return KitchenResult(ok=False, message="We couldn't find that table.");
+    }
+    table = mine[0];
+    open_orders = [o for o in [table ->:Placed:-> [?:Order]] if is_open(o)];
+    if not open_orders {
+        return KitchenResult(ok=False, message=f"{table.label} has no open orders to clear.");
+    }
+    if len([o for o in open_orders if o.status in ["sent", "preparing"]]) > 0 {
+        return KitchenResult(ok=False, message=f"{table.label} still has orders in progress. Clear it when they are all ready.");
+    }
+    stamp = now_iso();
+    for o in open_orders {
+        o.closed_at = stamp;
+    }
+    for r in [table ->:Requested:-> [?:SongRequest]] {
+        if getattr(r, "closed_at", "") == "" {
+            r.closed_at = stamp;
+        }
+    }
+    return KitchenResult(ok=True, message=f"{table.label} is cleared.");
+}
+
 def:protect kitchen_orders -> KitchenBoard {
     return kitchen_orders_for(my_restaurant());
 }
@@ -120,4 +154,9 @@ def:protect kitchen_dishes -> SoldOutBoard {
 
 def:protect set_sold_out(dish_id: str, value: bool) -> KitchenResult {
     return set_sold_out_for(my_restaurant(), dish_id, value);
+}
+
+"""Clear one of my tables for the next guests. Manager only."""
+def:protect clear_table(table_code: str) -> KitchenResult {
+    return clear_table_for(my_restaurant(), table_code);
 }

@@ -38,6 +38,7 @@ obj OrderView {
     has id: str,
         table: str,
         status: str,
+        table_code: str,
         allergy_note: str,
         preference_note: str,
         via_ai: bool,
@@ -61,6 +62,11 @@ def seconds_since(created_at: str) -> float {
     return (datetime.now(timezone.utc) - datetime.fromisoformat(created_at)).total_seconds();
 }
 
+"""An order is open until the manager clears its table. Orders saved before closed_at existed count as open."""
+def is_open(order: Order) -> bool {
+    return getattr(order, "closed_at", "") == "";
+}
+
 def order_items(order: Order) -> list[OrderItem] {
     return [order ->:Contains:-> [?:OrderItem]];
 }
@@ -69,7 +75,7 @@ def order_view(order: Order, table: Table) -> OrderView {
     items = [OrderItemView(name=i.dish_name, qty=i.qty, price=i.price) for i in order_items(order)];
     total = sum([i.price * i.qty for i in items]);
     return OrderView(
-        id=jid(order), table=table.label, status=order.status, allergy_note=order.allergy_note,
+        id=jid(order), table=table.label, table_code=table.code, status=order.status, allergy_note=order.allergy_note,
         preference_note=getattr(order, "preference_note", ""), via_ai=order.via_ai,
         minutes_ago=int(seconds_since(order.created_at) // 60), total=total, items=items
     );
@@ -177,6 +183,6 @@ def:pub table_orders(table_code: str) -> list[OrderView] {
         return [];
     }
     (rest, table) = found;
-    orders = sorted([table ->:Placed:-> [?:Order]], key=lambda (o: Order) { o.created_at; }, reverse=True);
+    orders = sorted([o for o in [table ->:Placed:-> [?:Order]] if is_open(o)], key=lambda (o: Order) { o.created_at; }, reverse=True);
     return [order_view(o, table) for o in orders];
 }

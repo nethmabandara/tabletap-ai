@@ -6,9 +6,11 @@ import from ..core.dj { ask_dj, DjReply }
 import from ..core.dj_agent { SongPick }
 import from ..core.music { send_song_request, RequestResult, RequestView }
 import from ..core.theme {
+    TAP_HEIGHT,
     button_style, card_style, pill_style, mono_style,
     INK, MUTED, BODY, GROUND, SURFACE, LINE, ACCENT, ACCENT_SOFT, FONT_TEXT, WARN_FG, WARN_BG, VEG_FG, VEG_BG,
-    RADIUS_CARD, RADIUS_BUTTON, SP_1, SP_2, SP_3, SP_4
+    RADIUS_CARD, RADIUS_BUTTON, SP_1, SP_2, SP_3, SP_4,
+    FS_2XL, FS_LG, FS_MD, FS_SM, FS_XL, FS_XS
 }
 
 glob MAX_WISH = 120,
@@ -25,7 +27,7 @@ def input_style() -> dict[str, str] {
     return {
         "width": "100%", "boxSizing": "border-box", "minHeight": "52px", "padding": f"0 {SP_3}px",
         "border": f"1px solid {LINE}", "borderRadius": f"{RADIUS_BUTTON}px", "fontFamily": FONT_TEXT,
-        "fontSize": "17px", "color": INK, "backgroundColor": SURFACE
+        "fontSize": f"{FS_LG}px", "color": INK, "backgroundColor": SURFACE
     };
 }
 
@@ -34,7 +36,7 @@ def:pub RequestRow(r: RequestView) -> JsxElement {
     <div style={card_style() | {"padding": f"{SP_2}px {SP_3}px", "marginBottom": f"{SP_2}px", "display": "flex", "justifyContent": "space-between", "alignItems": "center", "gap": f"{SP_2}px"}}>
         <div style={{"minWidth": "0"}}>
             <div style={{"color": INK, "fontWeight": "600"}}>{r.song}</div>
-            <div style={{"color": MUTED, "fontSize": "14px"}}>{r.artist}</div>
+            <div style={{"color": MUTED, "fontSize": f"{FS_SM}px"}}>{r.artist}</div>
         </div>
         <span style={pill_style(look[1], look[2]) | {"fontWeight": "600"}}>{look[0]}</span>
     </div>
@@ -62,8 +64,8 @@ def:pub ManualRequest(working: bool, full: bool, onSend: any) -> JsxElement {
 
 def:pub PickCard(pick: SongPick, steps: list[str], busy: bool, full: bool, sending: bool, onAnother: any, onSend: any) -> JsxElement {
     <div style={card_style() | {"padding": f"{SP_3}px", "marginTop": f"{SP_3}px", "opacity": "0.6" if busy else "1"}}>
-        <div style={{"color": ACCENT, "fontSize": "14px", "fontWeight": "700", "letterSpacing": "0.08em"}}>REQUEST FOR THE SINGER</div>
-        <div style={{"color": INK, "fontSize": "26px", "fontWeight": "700", "margin": f"{SP_1}px 0"}}>{pick.song}</div>
+        <div style={{"color": ACCENT, "fontSize": f"{FS_SM}px", "fontWeight": "700", "letterSpacing": "0.08em"}}>REQUEST FOR THE SINGER</div>
+        <div style={{"color": INK, "fontSize": f"{FS_2XL}px", "fontWeight": "700", "margin": f"{SP_1}px 0"}}>{pick.song}</div>
         <div style={{"color": MUTED}}>{pick.artist}</div>
         {if pick.message != "" {
             <div style={{"color": BODY, "margin": f"{SP_2}px 0"}}>{"Message: \"" + pick.message + "\""}</div>
@@ -73,9 +75,9 @@ def:pub PickCard(pick: SongPick, steps: list[str], busy: bool, full: bool, sendi
             <button style={button_style() | {"flex": "1", "backgroundColor": INK, "opacity": "0.5" if (busy or full) else "1"}} disabled={busy or full} onClick={lambda { onSend(); }}>{"Sending..." if sending else "Send to singer"}</button>
         </div>
         <div style={{"marginTop": f"{SP_3}px", "borderTop": f"1px solid {LINE}", "paddingTop": f"{SP_2}px"}}>
-            <div style={{"color": ACCENT, "fontWeight": "700", "fontSize": "14px"}}>What I checked</div>
+            <div style={{"color": ACCENT, "fontWeight": "700", "fontSize": f"{FS_SM}px"}}>What I checked</div>
             {for (i, s) in enumerate(steps) {
-                <div key={str(i)} style={mono_style() | {"color": BODY, "fontSize": "13px", "padding": "2px 0"}}>{"✓ " + s}</div>
+                <div key={str(i)} style={mono_style() | {"color": BODY, "fontSize": f"{FS_SM}px", "padding": "2px 0"}}>{"✓ " + s}</div>
             }}
         </div>
     </div>
@@ -167,23 +169,23 @@ def:pub DjScreen(code: str, table: str, requests: list[RequestView], onBack: any
     busy = working or sending;
     return <div style={{"maxWidth": "480px", "margin": "0 auto", "minHeight": "100vh", "backgroundColor": GROUND, "fontFamily": FONT_TEXT}}>
         <div style={{"display": "flex", "alignItems": "center", "gap": f"{SP_3}px", "padding": f"{SP_3}px", "backgroundColor": SURFACE, "borderBottom": f"1px solid {LINE}"}}>
-            <button aria-label="Back to the menu" onClick={lambda { onBack(); }} style={button_style(False) | {"width": "44px", "padding": "0", "fontSize": "22px"}}>←</button>
+            <button aria-label="Back to the menu" onClick={lambda { onBack(); }} style={button_style(False) | {"width": f"{TAP_HEIGHT}px", "padding": "0", "fontSize": f"{FS_XL}px"}}>←</button>
             <div>
-                <div style={{"color": INK, "fontSize": "24px", "fontWeight": "700"}}>Music</div>
-                <div style={{"color": MUTED, "fontSize": "15px"}}>{table + " · AI DJ"}</div>
+                <div style={{"color": INK, "fontSize": f"{FS_XL}px", "fontWeight": "700"}}>Music</div>
+                <div style={{"color": MUTED, "fontSize": f"{FS_MD}px"}}>{table + " · AI DJ"}</div>
             </div>
         </div>
         <div style={{"padding": f"{SP_3}px"}}>
             <div style={card_style() | {"padding": f"{SP_3}px"}}>
-                <div style={{"color": INK, "fontSize": "20px", "fontWeight": "700", "marginBottom": f"{SP_2}px"}}>What would you like to hear?</div>
+                <div style={{"color": INK, "fontSize": f"{FS_XL}px", "fontWeight": "700", "marginBottom": f"{SP_2}px"}}>What would you like to hear?</div>
                 <input
                     aria-label="What would you like to hear?" placeholder="For example: something romantic, old Sinhala"
                     maxLength={MAX_WISH} value={wish} disabled={busy} style={input_style()}
                     onChange={lambda (e: ChangeEvent) { wish = e.target.value; }}
                 />
-                <div style={{"textAlign": "right", "fontSize": "12px", "color": MUTED, "margin": f"4px 0 {SP_2}px"}}>{str(len(wish)) + " / " + str(MAX_WISH)}</div>
+                <div style={{"textAlign": "right", "fontSize": f"{FS_XS}px", "color": MUTED, "margin": f"4px 0 {SP_2}px"}}>{str(len(wish)) + " / " + str(MAX_WISH)}</div>
                 <button
-                    style={button_style() | {"width": "100%", "minHeight": "56px", "fontSize": "18px", "opacity": "0.5" if (busy or wish.strip() == "") else "1"}}
+                    style={button_style() | {"width": "100%", "minHeight": "56px", "fontSize": f"{FS_LG}px", "opacity": "0.5" if (busy or wish.strip() == "") else "1"}}
                     disabled={busy or wish.strip() == ""} onClick={lambda { ask(False); }}
                 >{"Asking the DJ..." if working else "Ask the AI DJ"}</button>
             </div>
@@ -199,14 +201,14 @@ def:pub DjScreen(code: str, table: str, requests: list[RequestView], onBack: any
             {if manual {
                 <ManualRequest working={busy} full={full} onSend={send_manual}/>
             }}
-            <div style={{"color": MUTED, "fontSize": "14px", "fontWeight": "700", "letterSpacing": "0.08em", "margin": f"{SP_4}px 0 {SP_2}px"}}>YOUR REQUESTS</div>
+            <div style={{"color": MUTED, "fontSize": f"{FS_SM}px", "fontWeight": "700", "letterSpacing": "0.08em", "margin": f"{SP_4}px 0 {SP_2}px"}}>YOUR REQUESTS</div>
             {if len(requests) == 0 {
                 <div style={{"color": MUTED}}>Nothing sent yet.</div>
             }}
             {for r in requests {
                 <RequestRow key={r.id} r={r}/>
             }}
-            <div style={{"color": MUTED, "fontSize": "14px", "marginTop": f"{SP_2}px"}}>{"Up to " + str(MAX_WAITING) + " requests waiting per table."}</div>
+            <div style={{"color": MUTED, "fontSize": f"{FS_SM}px", "marginTop": f"{SP_2}px"}}>{"Up to " + str(MAX_WAITING) + " requests waiting per table."}</div>
         </div>
     </div>;
 }

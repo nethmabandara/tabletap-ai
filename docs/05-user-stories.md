@@ -116,6 +116,13 @@ As a guest group, I want to describe our needs so the AI waiter plans an order t
 **K-03 Sold-out reaction (Could) 🤖**
 - **Given** Table 5 has Devilled Prawns in a "New" order, **when** the kitchen marks it sold out, **then** Table 5 sees a suggested swap from the AI waiter and can accept or decline.
 
+**K-04 Clear table (Should)**
+As the manager, I want to clear a table after the guests leave, so the next guests start fresh.
+- **Given** all of a table's open orders are Ready, **when** I tap "Clear table" and confirm, **then** those orders (and the table's song requests) are closed, never deleted, and disappear from the kitchen board and from the guests' page.
+- **Given** an order at the table is still New or Preparing, **then** clearing is refused with a friendly message and nothing changes.
+- **Given** the table has no open orders, **then** clearing is refused with a friendly message.
+- **Given** another restaurant's table, **then** it is refused and nothing changes.
+
 ---
 
 ## MU. Music screen

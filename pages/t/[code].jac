@@ -6,7 +6,7 @@ import from "@jac/runtime" { useParams }
 import from ...core.menu { get_menu, MenuView, DishView }
 import from ...core.orders { place_order, table_orders, OrderLine, OrderView, PlaceResult }
 import from ...core.music { table_requests, RequestView }
-import from ...core.theme { page_style, card_style, pill_style, INK, MUTED, ACCENT, ACCENT_SOFT, SURFACE, LINE, VEG_FG, VEG_BG, SP_3 }
+import from ...core.theme { page_style, card_style, pill_style, banner_style, INK, MUTED, ACCENT, ACCENT_SOFT, SURFACE, LINE, VEG_FG, VEG_BG, SHADOW_SOFT, SP_3 }
 import from ...ui.guest { MenuHeader, SectionChips, MenuList, WaiterBanner, MusicButton, section_id }
 import from ...ui.cart { CartBar, OrderSheet }
 import from ...ui.status_header { OrderStatusPart }
@@ -159,16 +159,18 @@ def:pub TablePage -> JsxPage {
         return <div>
             <div style={{"display": "none" if (view == "waiter" or (view == "music" and music_on)) else "block"}}>
             <main style={{"maxWidth": "480px", "margin": "0 auto", "minHeight": "100vh"}}>
-                <div style={{
-                    "position": "sticky", "top": "0", "zIndex": "10", "backgroundColor": SURFACE,
-                    "padding": f"{SP_3}px", "borderBottom": f"1px solid {LINE}"
-                }}>
+                <div style={banner_style()}>
                     <MenuHeader restaurant={menu.restaurant} table={menu.table}/>
-                    <OrderStatusPart orders={orders} loaded={orders_loaded}/>
                     <WaiterBanner onOpen={open_waiter}/>
                     {if music_on {
                         <MusicButton onOpen={open_music}/>
                     }}
+                </div>
+                <div style={{
+                    "position": "sticky", "top": "0", "zIndex": "10", "backgroundColor": SURFACE,
+                    "padding": f"0 {SP_3}px", "borderBottom": f"1px solid {LINE}", "boxShadow": SHADOW_SOFT
+                }}>
+                    <OrderStatusPart orders={orders} loaded={orders_loaded}/>
                     <SectionChips sections={menu.sections} active={active if active else menu.sections[0].name} onPick={pick}/>
                 </div>
                 <div style={{"padding": f"0 {SP_3}px 120px"}}>

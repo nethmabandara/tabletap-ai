@@ -2,10 +2,10 @@
 
 import from ..core.menu { DishView, SectionView }
 import from ..core.theme {
-    pill_style, chip_style, mono_style, step_style,
-    INK, MUTED, BODY, GROUND, SURFACE, LINE, ACCENT, ACCENT_SOFT, FONT_TEXT,
+    pill_style, chip_style, step_style, dish_photo_style, price_style,
+    INK, MUTED, GROUND, SURFACE, LINE, ACCENT, ACCENT_SOFT, ON_DARK, ON_DARK_MUTED, ON_DARK_SOFT, ON_DARK_LINE, FONT_TEXT,
     WARN_FG, WARN_BG, VEG_FG, VEG_BG, ALLERGY_FG, ALLERGY_BG, INFO_FG, INFO_BG,
-    RADIUS_CARD, SP_1, SP_2, SP_3, SP_4
+    RADIUS_CARD, RADIUS_BUTTON, SHADOW_SOFT, TAP_HEIGHT, FS_XS, FS_SM, FS_MD, FS_LG, FS_XL, FS_3XL, SP_0, SP_1, SP_2, SP_3, SP_4
 }
 
 # tag -> (label, text colour, background). Allergy tags always show.
@@ -33,17 +33,17 @@ def:pub section_id(name: str) -> str {
 }
 
 def:pub MenuHeader(restaurant: str, table: str) -> JsxElement {
-    <div style={{"display": "flex", "justifyContent": "space-between", "alignItems": "center"}}>
+    <div style={{"display": "flex", "justifyContent": "space-between", "alignItems": "flex-end", "gap": f"{SP_2}px"}}>
         <div>
-            <div style={{"color": MUTED, "fontSize": "16px"}}>{restaurant}</div>
-            <h1 style={{"color": INK, "fontSize": "32px", "fontWeight": "700", "margin": "0"}}>{table}</h1>
+            <div style={{"color": ON_DARK_MUTED, "fontSize": f"{FS_MD}px", "fontWeight": "500"}}>{restaurant}</div>
+            <h1 style={{"color": ON_DARK, "fontSize": f"{FS_3XL}px", "fontWeight": "700", "margin": "0", "lineHeight": "1.1"}}>{table}</h1>
         </div>
-        <span style={pill_style(ACCENT, ACCENT_SOFT) | {"fontSize": "15px", "padding": "8px 16px"}}>Open</span>
+        <span style={pill_style(ACCENT, ACCENT_SOFT) | {"fontSize": f"{FS_SM}px", "padding": f"{SP_1}px {SP_3}px", "fontWeight": "600"}}>Open</span>
     </div>
 }
 
 def:pub SectionChips(sections: list[SectionView], active: str, onPick: any) -> JsxElement {
-    <div style={{"display": "flex", "gap": f"{SP_1}px", "overflowX": "auto", "paddingTop": f"{SP_3}px"}}>
+    <div style={{"display": "flex", "gap": f"{SP_1}px", "overflowX": "auto", "padding": f"{SP_2}px 0"}}>
         {for sec in sections {
             <button
                 key={sec.name}
@@ -58,7 +58,7 @@ def:pub SectionChips(sections: list[SectionView], active: str, onPick: any) -> J
 
 def:pub TagPill(tag: str) -> JsxElement {
     look = TAG_LOOK.get(tag, [tag, MUTED, GROUND]);
-    <span style={pill_style(look[1], look[2]) | {"marginRight": "6px"}}>{look[0]}</span>
+    <span style={pill_style(look[1], look[2]) | {"marginRight": f"{SP_1}px", "marginTop": f"{SP_0}px", "fontWeight": "600"}}>{look[0]}</span>
 }
 
 def:pub DishCard(dish: DishView, qty: int, onAdd: any, onRemove: any) -> JsxElement {
@@ -67,37 +67,35 @@ def:pub DishCard(dish: DishView, qty: int, onAdd: any, onRemove: any) -> JsxElem
         "gap": f"{SP_3}px",
         "alignItems": "center",
         "backgroundColor": SURFACE,
+        "border": f"1px solid {LINE}",
+        "boxShadow": SHADOW_SOFT,
         "borderRadius": f"{RADIUS_CARD}px",
         "padding": f"{SP_3}px",
         "marginBottom": f"{SP_2}px",
         "opacity": "0.55" if dish.sold_out else "1"
     };
     <div style={card}>
-        <div style={{
-            "flex": "0 0 64px", "height": "64px", "borderRadius": "10px",
-            "backgroundColor": LINE, "color": MUTED, "fontSize": "13px",
-            "display": "flex", "alignItems": "center", "justifyContent": "center"
-        }}>Photo</div>
+        <div style={dish_photo_style(64)} aria-hidden="true">{dish.name[:1].upper()}</div>
         <div style={{"flex": "1", "minWidth": "0"}}>
-            <div style={{"color": INK, "fontSize": "18px", "fontWeight": "600"}}>{dish.name}</div>
+            <div style={{"color": INK, "fontSize": f"{FS_LG}px", "fontWeight": "600", "lineHeight": "1.25"}}>{dish.name}</div>
             {if len(dish.tags) > 0 {
-                <div style={{"marginTop": "6px"}}>
+                <div style={{"marginTop": f"{SP_0}px"}}>
                     {for t in dish.tags {
                         <TagPill key={t} tag={t}/>
                     }}
                 </div>
             }}
             {if dish.sold_out {
-                <div style={{"color": MUTED, "fontSize": "15px", "marginTop": "6px"}}>Sold out today</div>
+                <div style={{"color": MUTED, "fontSize": f"{FS_MD}px", "marginTop": f"{SP_1}px"}}>Sold out today</div>
             } else {
-                <div style={mono_style() | {"color": INK, "fontSize": "16px", "marginTop": "6px"}}>{money(dish.price)}</div>
+                <div style={price_style() | {"marginTop": f"{SP_1}px"}}>{money(dish.price)}</div>
             }}
         </div>
         {if not dish.sold_out {
             <div style={{"display": "flex", "alignItems": "center", "gap": f"{SP_1}px"}}>
                 {if qty > 0 {
                     <button style={step_style(False)} aria-label={"Remove one " + dish.name} onClick={lambda { onRemove(dish.id); }}>−</button>
-                    <span style={{"minWidth": "20px", "textAlign": "center", "color": INK, "fontWeight": "600"}}>{qty}</span>
+                    <span style={{"minWidth": "20px", "textAlign": "center", "color": INK, "fontWeight": "700", "fontSize": f"{FS_LG}px"}}>{qty}</span>
                 }}
                 <button style={step_style(qty > 0)} aria-label={"Add one " + dish.name} disabled={qty >= 20} onClick={lambda { onAdd(dish.id); }}>+</button>
             </div>
@@ -108,9 +106,9 @@ def:pub DishCard(dish: DishView, qty: int, onAdd: any, onRemove: any) -> JsxElem
 def:pub MenuList(sections: list[SectionView], cart: dict[str, int], onAdd: any, onRemove: any) -> JsxElement {
     <div>
         {for sec in sections {
-            <section key={sec.name} id={section_id(sec.name)} style={{"scrollMarginTop": "280px"}}>
+            <section key={sec.name} id={section_id(sec.name)} style={{"scrollMarginTop": "150px"}}>
                 <h2 style={{
-                    "color": MUTED, "fontSize": "14px", "fontWeight": "600",
+                    "color": MUTED, "fontSize": f"{FS_SM}px", "fontWeight": "700",
                     "letterSpacing": "0.08em", "textTransform": "uppercase",
                     "margin": f"{SP_4}px 0 {SP_2}px"
                 }}>{sec.name}</h2>
@@ -122,23 +120,23 @@ def:pub MenuList(sections: list[SectionView], cart: dict[str, int], onAdd: any, 
     </div>
 }
 
-"""The dark 'Ask the AI waiter' banner on the menu."""
+"""The 'Ask the AI waiter' button on the photo banner (accent colour)."""
 def:pub WaiterBanner(onOpen: any) -> JsxElement {
     <button
         onClick={lambda { onOpen(); }}
         style={{
-            "width": "100%", "marginTop": f"{SP_3}px", "padding": f"{SP_2}px {SP_3}px", "border": "none",
-            "borderRadius": f"{RADIUS_CARD}px", "backgroundColor": INK, "color": SURFACE, "cursor": "pointer",
+            "width": "100%", "marginTop": f"{SP_3}px", "minHeight": f"{TAP_HEIGHT}px", "padding": f"{SP_2}px {SP_3}px", "border": "none",
+            "borderRadius": f"{RADIUS_CARD}px", "backgroundColor": ACCENT, "color": ON_DARK, "cursor": "pointer",
             "display": "flex", "alignItems": "center", "gap": f"{SP_3}px", "textAlign": "left", "fontFamily": FONT_TEXT
         }}
     >
         <span style={{
-            "flex": "0 0 48px", "height": "48px", "borderRadius": "12px", "backgroundColor": ACCENT,
-            "display": "flex", "alignItems": "center", "justifyContent": "center", "fontSize": "22px"
+            "flex": "0 0 48px", "height": "48px", "borderRadius": f"{RADIUS_BUTTON}px", "backgroundColor": ON_DARK_SOFT,
+            "display": "flex", "alignItems": "center", "justifyContent": "center", "fontSize": f"{FS_XL}px"
         }}>✦</span>
         <span>
-            <span style={{"display": "block", "fontSize": "20px", "fontWeight": "600"}}>Ask the AI waiter</span>
-            <span style={{"display": "block", "color": LINE, "fontSize": "15px"}}>Tell us your diets, allergies and budget</span>
+            <span style={{"display": "block", "fontSize": f"{FS_LG}px", "fontWeight": "700"}}>Ask the AI waiter</span>
+            <span style={{"display": "block", "color": ON_DARK, "fontSize": f"{FS_SM}px"}}>Tell us your diets, allergies and budget</span>
         </span>
     </button>
 }
@@ -147,25 +145,25 @@ def:pub WaiterBanner(onOpen: any) -> JsxElement {
 def:pub NotePills(allergy: str, preference: str) -> JsxElement {
     <div>
         {if allergy != "" {
-            <span style={pill_style(ALLERGY_FG, ALLERGY_BG) | {"marginRight": "6px", "marginTop": "6px", "fontWeight": "600"}}>{allergy}</span>
+            <span style={pill_style(ALLERGY_FG, ALLERGY_BG) | {"marginRight": f"{SP_1}px", "marginTop": f"{SP_1}px", "fontWeight": "600"}}>{allergy}</span>
         }}
         {if preference != "" {
-            <span style={pill_style(WARN_FG, WARN_BG) | {"marginTop": "6px", "fontWeight": "600"}}>{preference}</span>
+            <span style={pill_style(WARN_FG, WARN_BG) | {"marginTop": f"{SP_1}px", "fontWeight": "600"}}>{preference}</span>
         }}
     </div>
 }
 
-"""A slim button that opens the Music screen. Only shown when the restaurant takes live singer requests."""
+"""A slim button that opens the Music screen (glass style on the photo banner). Only shown when the restaurant takes live singer requests."""
 def:pub MusicButton(onOpen: any) -> JsxElement {
     <button
         onClick={lambda { onOpen(); }}
         style={{
-            "width": "100%", "marginTop": f"{SP_2}px", "minHeight": "48px", "padding": f"0 {SP_3}px", "border": f"1px solid {LINE}",
-            "borderRadius": f"{RADIUS_CARD}px", "backgroundColor": SURFACE, "color": INK, "cursor": "pointer", "fontFamily": FONT_TEXT,
-            "fontSize": "16px", "fontWeight": "600", "display": "flex", "alignItems": "center", "gap": f"{SP_2}px"
+            "width": "100%", "marginTop": f"{SP_2}px", "minHeight": f"{TAP_HEIGHT}px", "padding": f"0 {SP_3}px", "border": f"1px solid {ON_DARK_LINE}",
+            "borderRadius": f"{RADIUS_CARD}px", "backgroundColor": ON_DARK_SOFT, "color": ON_DARK, "cursor": "pointer", "fontFamily": FONT_TEXT,
+            "fontSize": f"{FS_MD}px", "fontWeight": "600", "display": "flex", "alignItems": "center", "gap": f"{SP_2}px"
         }}
     >
-        <span style={{"color": ACCENT, "fontSize": "20px"}}>♪</span>
+        <span style={{"color": ON_DARK, "fontSize": f"{FS_XL}px"}}>♪</span>
         <span>Music · Ask the AI DJ</span>
     </button>
 }

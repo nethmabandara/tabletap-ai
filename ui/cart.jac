@@ -5,9 +5,10 @@ import from ..core.menu { DishView }
 import from ..core.orders { OrderView }
 import from ..core.theme {
     button_style, card_style, pill_style, step_style, mono_style,
-    INK, MUTED, BODY, GROUND, SURFACE, LINE, ACCENT, ACCENT_SOFT, SCRIM, SHADOW, FONT_TEXT,
+    INK, MUTED, BODY, GROUND, SURFACE, LINE, ACCENT, ACCENT_SOFT, SCRIM, SHADOW, FONT_TEXT, ON_DARK, ON_DARK_MUTED, TAP_HEIGHT,
     ALLERGY_FG, ALLERGY_BG, WARN_FG, WARN_BG, VEG_FG, VEG_BG, INFO_FG, INFO_BG,
-    RADIUS_CARD, RADIUS_BUTTON, SP_1, SP_2, SP_3, SP_4
+    RADIUS_CARD, RADIUS_BUTTON, SP_1, SP_2, SP_3, SP_4,
+    FS_LG, FS_MD, FS_SM, FS_XL
 }
 import from .guest { money, NotePills }
 
@@ -21,17 +22,20 @@ def:pub CartBar(count: int, total: int, onOpen: any) -> JsxElement {
         <button
             onClick={lambda { onOpen(); }}
             style={{
-                "width": "100%", "maxWidth": "480px", "margin": f"0 {SP_3}px {SP_3}px", "minHeight": "64px",
-                "padding": f"0 {SP_4}px", "border": "none", "borderRadius": f"{RADIUS_CARD}px",
-                "backgroundColor": ACCENT, "color": SURFACE, "fontFamily": FONT_TEXT, "cursor": "pointer",
-                "display": "flex", "justifyContent": "space-between", "alignItems": "center"
+                "width": "100%", "maxWidth": "480px", "margin": f"0 {SP_3}px {SP_3}px", "minHeight": "72px",
+                "padding": f"{SP_2}px {SP_2}px {SP_2}px {SP_4}px", "border": "none", "borderRadius": f"{RADIUS_CARD}px",
+                "backgroundColor": INK, "color": ON_DARK, "fontFamily": FONT_TEXT, "cursor": "pointer", "boxShadow": SHADOW,
+                "display": "flex", "justifyContent": "space-between", "alignItems": "center", "gap": f"{SP_3}px"
             }}
         >
             <span style={{"textAlign": "left"}}>
-                <span style={{"display": "block", "fontSize": "14px"}}>{str(count) + (" item" if count == 1 else " items")}</span>
-                <span style={mono_style() | {"fontSize": "20px", "fontWeight": "600"}}>{money(total)}</span>
+                <span style={{"display": "block", "fontSize": f"{FS_SM}px", "color": ON_DARK_MUTED}}>{str(count) + (" item" if count == 1 else " items")}</span>
+                <span style={{"fontSize": f"{FS_XL}px", "fontWeight": "700"}}>{money(total)}</span>
             </span>
-            <span style={{"fontSize": "18px", "fontWeight": "600"}}>View order →</span>
+            <span style={{
+                "minHeight": f"{TAP_HEIGHT}px", "padding": f"0 {SP_4}px", "borderRadius": f"{RADIUS_BUTTON}px", "backgroundColor": ACCENT,
+                "color": ON_DARK, "fontSize": f"{FS_LG}px", "fontWeight": "700", "display": "flex", "alignItems": "center"
+            }}>View order →</span>
         </button>
     </div>
 }
@@ -43,7 +47,7 @@ def:pub CartLineRow(dish: DishView, qty: int, onAdd: any, onRemove: any) -> JsxE
             {if dish.sold_out {
                 <div style={pill_style(ALLERGY_FG, ALLERGY_BG) | {"marginTop": "4px"}}>Sold out today. Please remove it.</div>
             } else {
-                <div style={mono_style() | {"color": MUTED, "fontSize": "14px"}}>{money(dish.price * qty)}</div>
+                <div style={mono_style() | {"color": MUTED, "fontSize": f"{FS_SM}px"}}>{money(dish.price * qty)}</div>
             }}
         </div>
         <button style={step_style(False)} aria-label={"Remove one " + dish.name} onClick={lambda { onRemove(dish.id); }}>−</button>
@@ -61,7 +65,7 @@ def:pub OrderSheet(
     field = {
         "width": "100%", "boxSizing": "border-box", "minHeight": "72px", "padding": f"{SP_2}px",
         "border": f"1px solid {LINE}", "borderRadius": f"{RADIUS_BUTTON}px", "fontFamily": FONT_TEXT,
-        "fontSize": "16px", "color": INK, "backgroundColor": SURFACE
+        "fontSize": f"{FS_MD}px", "color": INK, "backgroundColor": SURFACE
     };
     <div style={{"position": "fixed", "inset": "0", "zIndex": "30", "backgroundColor": SCRIM, "display": "flex", "alignItems": "flex-end", "justifyContent": "center"}}>
         <div style={{
@@ -69,8 +73,8 @@ def:pub OrderSheet(
             "backgroundColor": SURFACE, "borderRadius": f"{RADIUS_CARD}px {RADIUS_CARD}px 0 0", "padding": f"{SP_4}px {SP_3}px"
         }}>
             <div style={{"display": "flex", "justifyContent": "space-between", "alignItems": "center"}}>
-                <h2 style={{"color": INK, "fontSize": "22px", "margin": "0"}}>{"Send this order?" if confirming else "Your order"}</h2>
-                <button style={button_style(False) | {"minHeight": "44px", "padding": f"0 {SP_3}px"}} disabled={sending} onClick={lambda { onClose(); }}>Close</button>
+                <h2 style={{"color": INK, "fontSize": f"{FS_XL}px", "margin": "0"}}>{"Send this order?" if confirming else "Your order"}</h2>
+                <button style={button_style(False) | {"minHeight": f"{TAP_HEIGHT}px", "padding": f"0 {SP_3}px"}} disabled={sending} onClick={lambda { onClose(); }}>Close</button>
             </div>
             {for d in lines {
                 <CartLineRow key={d.id} dish={d} qty={cart[d.id]} onAdd={onAdd} onRemove={onRemove}/>
@@ -79,7 +83,7 @@ def:pub OrderSheet(
                 <span>Total</span>
                 <span style={mono_style()}>{money(total)}</span>
             </div>
-            <label style={{"color": BODY, "fontSize": "14px"}}>Allergies or notes for the kitchen (optional)</label>
+            <label style={{"color": BODY, "fontSize": f"{FS_SM}px"}}>Allergies or notes for the kitchen (optional)</label>
             <textarea
                 style={field | {"margin": f"{SP_1}px 0"}}
                 value={note}
@@ -87,7 +91,7 @@ def:pub OrderSheet(
                 disabled={sending}
                 onChange={lambda (e: ChangeEvent) { onNote(e.target.value); }}
             />
-            <div style={{"color": MUTED, "fontSize": "13px", "textAlign": "right"}}>{str(len(note)) + " / " + str(MAX_NOTE)}</div>
+            <div style={{"color": MUTED, "fontSize": f"{FS_SM}px", "textAlign": "right"}}>{str(len(note)) + " / " + str(MAX_NOTE)}</div>
             {if message != "" {
                 <p style={pill_style(ALLERGY_FG, ALLERGY_BG) | {"display": "block", "margin": f"{SP_2}px 0"}}>{message}</p>
             }}
@@ -146,9 +150,9 @@ def:pub StatusStrip(orders: list[OrderView], open: bool, onToggle: any) -> JsxEl
         onClick={lambda { onToggle(); }}
         style={{
             "display": "flex", "justifyContent": "space-between", "alignItems": "center", "width": "100%",
-            "boxSizing": "border-box", "height": "36px", "marginTop": f"{SP_2}px", "padding": f"0 {SP_3}px",
+            "boxSizing": "border-box", "height": f"{TAP_HEIGHT}px", "marginTop": f"{SP_2}px", "padding": f"0 {SP_3}px",
             "border": "none", "borderRadius": f"{RADIUS_BUTTON}px", "backgroundColor": look[2], "color": look[1],
-            "fontFamily": FONT_TEXT, "fontSize": "15px", "fontWeight": "600", "cursor": "pointer",
+            "fontFamily": FONT_TEXT, "fontSize": f"{FS_MD}px", "fontWeight": "600", "cursor": "pointer",
             "whiteSpace": "nowrap", "overflow": "hidden"
         }}
     >

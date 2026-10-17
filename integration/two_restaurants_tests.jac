@@ -246,6 +246,25 @@ test "two managers, two restaurants: nothing leaks between them (real logins, re
         statuses = {r["song"]: r["status"] for r in call(base, "table_requests", {"table_code": "t5"})};
         assert statuses == {"Integration Song One": "accepted", "Integration Song Two": "skipped"};
         assert call(base, "music_queue", {}, t1)["requests"] == [];
+
+        # Clear table (K-04): refused while an order is in progress, refused for another restaurant, then works once.
+        wet_board = call(base, "kitchen_orders", {}, t1);
+        wet_order_id = wet_board["orders"][0]["id"];
+        in_progress = call(base, "clear_table", {"table_code": "t5"}, t1);
+        assert not in_progress["ok"] and "in progress" in in_progress["message"];
+        assert call(base, "set_order_status", {"order_id": wet_order_id, "new_status": "preparing"}, t1)["ok"];
+        assert call(base, "set_order_status", {"order_id": wet_order_id, "new_status": "ready"}, t1)["ok"];
+        foreign = call(base, "clear_table", {"table_code": "t5"}, t2);
+        assert not foreign["ok"] and foreign["message"] == "We couldn't find that table.";
+        assert len(call(base, "table_orders", {"table_code": "t5"})) == 1;
+        cleared = call(base, "clear_table", {"table_code": "t5"}, t1);
+        assert cleared["ok"] and cleared["message"] == "Table 5 is cleared.";
+        assert call(base, "table_orders", {"table_code": "t5"}) == [];
+        assert call(base, "kitchen_orders", {}, t1)["orders"] == [];
+        again = call(base, "clear_table", {"table_code": "t5"}, t1);
+        assert not again["ok"] and "no open orders" in again["message"];
+        assert len(call(base, "kitchen_orders", {}, t2)["orders"]) == 1;
+        assert call(base, "clear_table", {"table_code": "t5"})  is None;
     } finally {
         stop_server(proc);
         mine = [name for (name, owner) in db_names().items() if owner.startswith(app)];

@@ -61,8 +61,13 @@ def share_with_owner(rest: Restaurant, target: SongRequest) {
     }
 }
 
+"""A song request is open until the manager clears the table. Requests saved before closed_at existed count as open."""
+def is_open_request(r: SongRequest) -> bool {
+    return getattr(r, "closed_at", "") == "";
+}
+
 def table_pending(table: Table) -> list[SongRequest] {
-    return [table ->:Requested:-> [?:SongRequest, status == "pending"]];
+    return [r for r in [table ->:Requested:-> [?:SongRequest, status == "pending"]] if is_open_request(r)];
 }
 
 """A guest sends a request for the singer. Every rule is checked here, in code."""
@@ -104,7 +109,10 @@ def:pub table_requests(table_code: str) -> list[RequestView] {
         return [];
     }
     (rest, table) = found;
-    ordered = sorted([table ->:Requested:-> [?:SongRequest]], key=lambda (r: SongRequest) { r.created_at; }, reverse=True);
+    ordered = sorted(
+        [r for r in [table ->:Requested:-> [?:SongRequest]] if is_open_request(r)],
+        key=lambda (r: SongRequest) { r.created_at; }, reverse=True
+    );
     return [
         RequestView(
             id=jid(r), song=r.song, artist=r.artist, message=r.message, status=r.status,
@@ -145,7 +153,7 @@ def answer_request_for(rest: Restaurant | None, request_id: str, accept: bool) -
         return refuse(problem);
     }
     for table in [rest ->:HasTable:-> [?:Table]] {
-        for r in [table ->:Requested:-> [?:SongRequest]] {
+        for r in [q for q in [table ->:Requested:-> [?:SongRequest]] if is_open_request(q)] {
             if jid(r) == request_id {
                 if r.status != "pending" {
                     return refuse("That request was already answered.");

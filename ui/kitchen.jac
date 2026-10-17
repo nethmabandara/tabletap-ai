@@ -39,7 +39,11 @@ def:pub KitchenHeader(restaurant: str, showDishes: bool, onToggle: any) -> JsxEl
     </div>
 }
 
-def:pub OrderCard(order: OrderView, accent: str, working: bool, onMove: any) -> JsxElement {
+"""clearMode: '' (no button), 'ask' (Clear table button) or 'confirm' (are you sure?). Only on a ready card of a table whose orders are all ready."""
+def:pub OrderCard(
+    order: OrderView, accent: str, working: bool, onMove: any,
+    clearMode: str, clearing: bool, onAskClear: any, onKeep: any, onClear: any
+) -> JsxElement {
     next_status = "preparing" if order.status == "sent" else ("ready" if order.status == "preparing" else "");
     <div style={{
         "backgroundColor": SURFACE, "borderRadius": f"{RADIUS_CARD}px", "borderTop": f"6px solid {accent}",
@@ -79,17 +83,39 @@ def:pub OrderCard(order: OrderView, accent: str, working: bool, onMove: any) -> 
         } else {
             <div style={{"color": VEG_FG, "fontWeight": "600", "marginTop": f"{SP_2}px"}}>Waiting for pickup</div>
         }}
+        {if clearMode == "ask" {
+            <button
+                style={button_style(False) | {"width": "100%", "marginTop": f"{SP_2}px"}}
+                onClick={lambda { onAskClear(order.table_code); }}
+            >Clear table</button>
+        }}
+        {if clearMode == "confirm" {
+            <div style={{"marginTop": f"{SP_2}px", "padding": f"{SP_2}px", "backgroundColor": ACCENT_SOFT, "borderRadius": f"{RADIUS_BUTTON}px"}}>
+                <div style={{"color": INK, "fontWeight": "600", "marginBottom": f"{SP_2}px"}}>{"Clear " + order.table + "? Guests will no longer see these orders."}</div>
+                <div style={{"display": "flex", "gap": f"{SP_1}px"}}>
+                    <button style={button_style(False) | {"flex": "1"}} disabled={clearing} onClick={lambda { onKeep(); }}>Keep</button>
+                    <button style={button_style() | {"flex": "1", "opacity": "0.5" if clearing else "1"}} disabled={clearing} onClick={lambda { onClear(order.table_code); }}>{"Clearing..." if clearing else "Yes, clear"}</button>
+                </div>
+            </div>
+        }}
     </div>
 }
 
-def:pub OrderColumn(title: str, orders: list[OrderView], accent: str, soft: str, busy: str, onMove: any) -> JsxElement {
+def:pub OrderColumn(
+    title: str, orders: list[OrderView], accent: str, soft: str, busy: str, onMove: any,
+    clearIds: list[str], confirmCode: str, clearing: bool, onAskClear: any, onKeep: any, onClear: any
+) -> JsxElement {
     <div>
         <div style={{"display": "flex", "justifyContent": "space-between", "alignItems": "center", "marginBottom": f"{SP_2}px"}}>
             <h2 style={{"margin": "0", "fontSize": "20px", "color": INK}}>{title}</h2>
             <span style={pill_style(accent, soft) | {"fontWeight": "600"}}>{len(orders)}</span>
         </div>
         {for o in orders {
-            <OrderCard key={o.id} order={o} accent={accent} working={busy == o.id} onMove={onMove}/>
+            <OrderCard
+                key={o.id} order={o} accent={accent} working={busy == o.id} onMove={onMove}
+                clearMode={("" if o.id not in clearIds else ("confirm" if confirmCode == o.table_code else "ask"))}
+                clearing={clearing} onAskClear={onAskClear} onKeep={onKeep} onClear={onClear}
+            />
         }}
     </div>
 }
