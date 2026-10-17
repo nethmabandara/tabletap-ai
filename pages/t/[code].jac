@@ -5,13 +5,13 @@ import from "react" { useEffect }
 import from "@jac/runtime" { useParams }
 import from ...core.menu { get_menu, MenuView, DishView }
 import from ...core.orders { place_order, table_orders, OrderLine, OrderView, PlaceResult }
+import from ...core.music { table_requests, RequestView }
 import from ...core.theme { page_style, card_style, pill_style, INK, MUTED, ACCENT, ACCENT_SOFT, SURFACE, LINE, VEG_FG, VEG_BG, SP_3 }
-import from ...ui.guest { MenuHeader, SectionChips, MenuList, WaiterBanner, section_id }
-import from ...ui.cart { CartBar, OrderSheet, StatusStrip, StatusPanel }
+import from ...ui.guest { MenuHeader, SectionChips, MenuList, WaiterBanner, MusicButton, section_id }
+import from ...ui.cart { CartBar, OrderSheet }
+import from ...ui.status_header { OrderStatusPart }
 import from ...ui.waiter { WaiterScreen }
-
-# Scroll events caused by the page itself (the strip appearing) must not close the panel.
-glob SCROLL_GUARD: dict[str, float] = {"until": 0.0};
+import from ...ui.dj { DjScreen }
 
 def:pub TablePage -> JsxPage {
     has menu: MenuView | None = None,
@@ -26,18 +26,20 @@ def:pub TablePage -> JsxPage {
         notice: str = "",
         view: str = "menu",
         orders_loaded: bool = False,
-        seen_sig: str = "",
-        seen_ready: bool = False,
-        panel_mode: str = "closed",
-        panel_stamp: int = 0;
+        requests: list[RequestView] = [];
     params = useParams();
     code: str = params["code"];
 
     async def refresh {
+        fresh: MenuView | None = None;
         try {
-            menu = await get_menu(code);
+            fresh = await get_menu(code);
+            menu = fresh;
             orders = await table_orders(code);
             orders_loaded = True;
+            if fresh.music_mode in ["singer", "both"] {
+                requests = await table_requests(code);
+            }
             failed = False;
         } except Exception {
             failed = True;
@@ -51,6 +53,11 @@ def:pub TablePage -> JsxPage {
 
     def close_waiter {
         view = "menu";
+    }
+
+    def open_music {
+        view = "music";
+        window.scrollTo(0, 0);
     }
 
     async def waiter_sent(text: str) {
@@ -120,42 +127,6 @@ def:pub TablePage -> JsxPage {
         sending = False;
     }
 
-    def toggle_panel {
-        panel_mode = "closed" if panel_mode != "closed" else "pinned";
-    }
-
-    orders_sig = "|".join([o.id + ":" + o.status for o in orders]);
-
-    # Open the cards after an order is sent or when a status changes (not for orders already there on arrival).
-    can with [orders_sig] entry {
-        if orders_loaded {
-            if seen_ready and orders_sig != seen_sig and orders_sig != "" {
-                SCROLL_GUARD["until"] = Date.now() + 700;
-                panel_mode = "pinned" if panel_mode == "pinned" else "auto";
-                panel_stamp = panel_stamp + 1;
-            }
-            seen_sig = orders_sig;
-            seen_ready = True;
-        }
-    }
-
-    # An automatically opened panel closes itself after 5 seconds.
-    useEffect(lambda {
-        timer = setTimeout(lambda { panel_mode = "closed"; }, 5000) if panel_mode == "auto" else None;
-        return lambda { if timer { clearTimeout(timer); } };
-    }, [panel_mode, panel_stamp]);
-
-    # Scrolling away closes the panel.
-    useEffect(lambda {
-        on_scroll = lambda {
-            if Date.now() > SCROLL_GUARD["until"] and window.scrollY > 24 {
-                panel_mode = "closed";
-            }
-        };
-        window.addEventListener("scroll", on_scroll);
-        return lambda { window.removeEventListener("scroll", on_scroll); };
-    }, []);
-
     useEffect(lambda {
         refresh();
         timer = setInterval(lambda { refresh(); }, 3000);
@@ -184,22 +155,21 @@ def:pub TablePage -> JsxPage {
         lines = dishes_in_cart();
         count = sum([cart[d.id] for d in lines]);
         total = sum([cart[d.id] * d.price for d in lines]);
+        music_on = menu.music_mode in ["singer", "both"];
         return <div>
-            <div style={{"display": "none" if view == "waiter" else "block"}}>
+            <div style={{"display": "none" if (view == "waiter" or (view == "music" and music_on)) else "block"}}>
             <main style={{"maxWidth": "480px", "margin": "0 auto", "minHeight": "100vh"}}>
                 <div style={{
                     "position": "sticky", "top": "0", "zIndex": "10", "backgroundColor": SURFACE,
                     "padding": f"{SP_3}px", "borderBottom": f"1px solid {LINE}"
                 }}>
                     <MenuHeader restaurant={menu.restaurant} table={menu.table}/>
-                    {if len(orders) > 0 {
-                        <StatusStrip orders={orders} open={panel_mode != "closed"} onToggle={toggle_panel}/>
-                    }}
+                    <OrderStatusPart orders={orders} loaded={orders_loaded}/>
                     <WaiterBanner onOpen={open_waiter}/>
-                    <SectionChips sections={menu.sections} active={active if active else menu.sections[0].name} onPick={pick}/>
-                    {if panel_mode != "closed" and len(orders) > 0 {
-                        <StatusPanel orders={orders}/>
+                    {if music_on {
+                        <MusicButton onOpen={open_music}/>
                     }}
+                    <SectionChips sections={menu.sections} active={active if active else menu.sections[0].name} onPick={pick}/>
                 </div>
                 <div style={{"padding": f"0 {SP_3}px 120px"}}>
                     {if notice != "" {
@@ -221,6 +191,9 @@ def:pub TablePage -> JsxPage {
             </div>
             <div style={{"display": "block" if view == "waiter" else "none"}}>
                 <WaiterScreen code={code} table={menu.table} onBack={close_waiter} onSent={waiter_sent}/>
+            </div>
+            <div style={{"display": "block" if (view == "music" and music_on) else "none"}}>
+                <DjScreen code={code} table={menu.table} requests={requests} onBack={close_waiter} onSent={refresh}/>
             </div>
         </div>;
     }

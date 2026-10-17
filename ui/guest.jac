@@ -154,3 +154,18 @@ def:pub NotePills(allergy: str, preference: str) -> JsxElement {
         }}
     </div>
 }
+
+"""A slim button that opens the Music screen. Only shown when the restaurant takes live singer requests."""
+def:pub MusicButton(onOpen: any) -> JsxElement {
+    <button
+        onClick={lambda { onOpen(); }}
+        style={{
+            "width": "100%", "marginTop": f"{SP_2}px", "minHeight": "48px", "padding": f"0 {SP_3}px", "border": f"1px solid {LINE}",
+            "borderRadius": f"{RADIUS_CARD}px", "backgroundColor": SURFACE, "color": INK, "cursor": "pointer", "fontFamily": FONT_TEXT,
+            "fontSize": "16px", "fontWeight": "600", "display": "flex", "alignItems": "center", "gap": f"{SP_2}px"
+        }}
+    >
+        <span style={{"color": ACCENT, "fontSize": "20px"}}>♪</span>
+        <span>Music · Ask the AI DJ</span>
+    </button>
+}

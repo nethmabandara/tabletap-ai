@@ -94,6 +94,7 @@ def:pub Dashboard -> JsxPage {
                     <button style={button_style()} onClick={lambda { nav("/menu-setup"); }}>Menu setup</button>
                     <button style={button_style()} onClick={lambda { nav("/tables"); }}>Tables & links</button>
                     <button style={button_style()} onClick={lambda { nav("/kitchen"); }}>Kitchen board</button>
+                    <button style={button_style()} onClick={lambda { nav("/music"); }}>Music screen</button>
                     <button style={button_style(False)} onClick={lambda { log_out(); }}>Log out</button>
                 </div>
             }}
