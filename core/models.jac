@@ -4,7 +4,8 @@ node Restaurant {
     has name: str,
         slug: str,
         music_mode: str = "off",
-        menu_published: bool = False;
+        menu_published: bool = False,
+        owner_root: str = "";
 }
 
 node Section {

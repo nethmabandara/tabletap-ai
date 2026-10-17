@@ -81,7 +81,8 @@ def tags_for(is_veg: bool, spicy: bool, allergens: list[str]) -> list[str] {
 """Create the whole starting graph on root.shared, owned by the caller (the manager)."""
 def build_wet_water -> Restaurant {
     rest = root.shared ++> Restaurant(
-        name="Wet Water Resort", slug="wet-water", music_mode="both", menu_published=True
+        name="Wet Water Resort", slug="wet-water", music_mode="both", menu_published=True,
+        owner_root=jid(root)
     );
     root +>:Manages:+> rest;
     grant(rest, level=AccessLevel.READ);

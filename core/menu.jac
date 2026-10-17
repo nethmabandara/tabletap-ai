@@ -3,10 +3,17 @@
 import from .models { Restaurant, Section, Dish, Table, Manages, HasSection, HasDish, HasTable }
 import from .seed { build_wet_water }
 
-"""The restaurant the caller manages, found through their Manages edge."""
+"""The restaurant the caller manages, found through their Manages edge.
+Also records the manager's root on it (older restaurants lack this), so guest orders can be shared with the owner only."""
 def my_restaurant -> Restaurant | None {
     mine = [root ->:Manages:-> [?:Restaurant]];
-    return mine[0] if mine else None;
+    if not mine {
+        return None;
+    }
+    if mine[0].owner_root != jid(root) {
+        mine[0].owner_root = jid(root);
+    }
+    return mine[0];
 }
 
 """True if any manager has already claimed the Wet Water demo (it can be claimed only once)."""
@@ -25,7 +32,8 @@ def:protect claim_demo_restaurant -> bool {
 
 """One dish as the guest sees it. Plain obj, so no graph nodes cross to the browser."""
 obj DishView {
-    has name: str,
+    has id: str,
+        name: str,
         price: int,
         tags: list[str],
         sold_out: bool;
@@ -48,7 +56,7 @@ def section_views(rest: Restaurant) -> list[SectionView] {
     views: list[SectionView] = [];
     for sec in sorted([rest ->:HasSection:-> [?:Section]], key=lambda (s: Section) { s.position; }) {
         dishes = [
-            DishView(name=d.name, price=d.price, tags=d.tags, sold_out=d.sold_out)
+            DishView(id=jid(d), name=d.name, price=d.price, tags=d.tags, sold_out=d.sold_out)
             for d in sorted([sec ->:HasDish:-> [?:Dish]], key=lambda (d: Dish) { d.position; })
         ];
         views.append(SectionView(name=sec.name, dishes=dishes));
@@ -79,4 +87,28 @@ def:pub get_menu(table_code: str) -> MenuView {
 def:protect my_restaurant_name -> str {
     rest = my_restaurant();
     return rest.name if rest is not None else "";
+}
+
+"""Find the published restaurant and table for a table code. None if the link is not valid."""
+def find_table(table_code: str) -> tuple[Restaurant, Table] | None {
+    for rest in [root.shared -->[?:Restaurant]] {
+        if not rest.menu_published {
+            continue;
+        }
+        for table in [rest ->:HasTable:-> [?:Table]] {
+            if table.code == table_code {
+                return (rest, table);
+            }
+        }
+    }
+    return None;
+}
+
+"""Every dish of a restaurant, across its sections."""
+def all_dishes(rest: Restaurant) -> list[Dish] {
+    dishes: list[Dish] = [];
+    for sec in [rest ->:HasSection:-> [?:Section]] {
+        dishes += [sec ->:HasDish:-> [?:Dish]];
+    }
+    return dishes;
 }
