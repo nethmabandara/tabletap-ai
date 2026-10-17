@@ -1,0 +1,16 @@
+.jac/
+node_modules/
+.vscode/
+.idea/
+
+# personal guides, kept local
+docs/00-*
+docs/02-*
+docs/08-*
+docs/11-*
+docs/12-*
+docs/13-*
+docs/14-*
+docs/15-*
+docs/16-*
+.env
