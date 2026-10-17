@@ -33,9 +33,14 @@ def:pub Dashboard -> JsxPage {
             </h1>
             <p style={{"color": MUTED, "margin": "0 0 24px"}}>{"The demo restaurant is already taken. Setting up your own restaurant is coming soon." if loaded and not name else "Your menu, kitchen board and music screen will appear here."}</p>
             {if loaded and not name {
-                <p style={pill_style(WARN_FG, WARN_BG) | {"display": "block", "margin": "0 0 16px"}}>Set up your restaurant first to use the kitchen board.</p>
+                <p style={pill_style(WARN_FG, WARN_BG) | {"display": "block", "margin": "0 0 16px"}}>Set up your restaurant first.</p>
             }}
             <div style={{"display": "flex", "gap": "12px", "flexWrap": "wrap"}}>
+                <button
+                    style={button_style() | {"opacity": "1" if name else "0.5"}}
+                    disabled={not name}
+                    onClick={lambda { nav("/menu-setup"); }}
+                >Menu setup</button>
                 <button
                     style={button_style() | {"opacity": "1" if name else "0.5"}}
                     disabled={not name}
