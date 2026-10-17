@@ -3,7 +3,7 @@
 import time;
 import from jaclang.byllm.lib { MockLLM, MockToolCall }
 import from core.models { Restaurant, Section, Dish, Table, HasSection, HasDish, HasTable, Order, Placed }
-import from core.menu { claim_demo_restaurant, find_table }
+import from core.menu { claim_demo_restaurant, restaurant_for_table }
 import from core.agents { WaiterRun, AgentAnswer, ChatTurn, MODEL_OVERRIDE }
 import from core.waiter { ask_waiter, reset_waiter_throttle, LAST_ASK, BUSY_MESSAGE }
 import from core.waiter_safety { PlanItem }
@@ -32,7 +32,7 @@ def done {
 }
 
 def count_orders(code: str) -> int {
-    found = find_table(code);
+    found = restaurant_for_table(code);
     assert found is not None;
     (rest, table) = found;
     return len([table ->:Placed:-> [?:Order]]);

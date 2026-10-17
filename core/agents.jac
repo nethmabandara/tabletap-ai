@@ -6,7 +6,7 @@ The AI only SUGGESTS: the flow in waiter.jac checks everything in code afterward
 """
 
 import from .waiter_safety { PlanItem, DishFacts, money_text, cart_total as total_of }
-import from .menu { find_table, dish_facts }
+import from .menu { restaurant_for_table, dish_facts }
 
 # Tests put a MockLLM here. Empty in production: the model from jac.toml [byllm.model] is used.
 glob MODEL_OVERRIDE: list[any] = [];
@@ -67,12 +67,12 @@ obj WaiterPlan {
 }
 
 def facts_for_table(code: str) -> list[DishFacts] {
-    found = find_table(code);
+    found = restaurant_for_table(code);
     if found is None {
         return [];
     }
     (rest, table) = found;
-    return dish_facts(rest);
+    return dish_facts(rest) if rest.menu_published else [];
 }
 
 obj WaiterRun {

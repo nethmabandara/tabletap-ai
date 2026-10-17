@@ -2,7 +2,7 @@
 
 import time;
 import from .models { Restaurant, Order, Placed, HasTable }
-import from .menu { claim_demo_restaurant, my_restaurant, all_dishes, find_table }
+import from .menu { claim_demo_restaurant, my_restaurant, all_dishes, restaurant_for_table }
 
 def owned -> Restaurant {
     claim_demo_restaurant();
@@ -27,7 +27,7 @@ def fresh(label: str) -> str {
 }
 
 def count_orders(code: str) -> int {
-    found = find_table(code);
+    found = restaurant_for_table(code);
     assert found is not None;
     (rest, table) = found;
     return len([table ->:Placed:-> [?:Order]]);

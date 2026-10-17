@@ -1,7 +1,7 @@
 """Tests for the kitchen board (K-01, K-02): order flow, sold-out switch, and refusing non-owners."""
 
 import from .models { Restaurant, Order, Dish, Placed }
-import from .menu { claim_demo_restaurant, my_restaurant, all_dishes, find_table, get_menu }
+import from .menu { claim_demo_restaurant, my_restaurant, all_dishes, restaurant_for_table, get_menu }
 import from .orders { place_order, table_orders, OrderLine }
 
 def owned -> Restaurant {

@@ -9,7 +9,7 @@
 
 import time;
 import traceback;
-import from .menu { find_table, dish_facts }
+import from .menu { restaurant_for_table, dish_facts }
 import from .agents { WaiterRun, WaiterPlan, PlanLine, ChatTurn, AgentAnswer }
 import from .waiter_rules { Rules, read_rules, merge_ai_avoid, restricted_allergens, build_notes, rules_text }
 import from .waiter_safety { check_plan, adjusted_summary, money_text, DishFacts, SafetyResult, Removed }
@@ -128,11 +128,14 @@ def:pub ask_waiter(table_code: str, message: str, history: list[ChatTurn]) -> Wa
     if len(text) > MAX_MESSAGE {
         return refuse(f"Your message is too long (up to {MAX_MESSAGE} characters). Please shorten it.");
     }
-    found = find_table(table_code);
+    found = restaurant_for_table(table_code);
     if found is None {
         return refuse("This table link isn't valid.");
     }
     (rest, table) = found;
+    if not rest.menu_published {
+        return refuse("The menu is not ready yet, so the AI waiter is not available. Menu coming soon.");
+    }
     if table_code in IN_FLIGHT {
         return refuse("The waiter is still working on your last request. Please wait a moment.");
     }

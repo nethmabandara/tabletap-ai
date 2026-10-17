@@ -8,7 +8,7 @@ import from datetime { datetime, timezone }
 import from uuid { UUID }
 import from jaclang { JacRuntime as Jac }
 import from .models { Restaurant, Table, Dish, Order, OrderItem, Placed, Contains }
-import from .menu { find_table, all_dishes }
+import from .menu { restaurant_for_table, all_dishes }
 
 glob MAX_QTY = 20,
      MAX_LINES = 30,
@@ -122,11 +122,14 @@ def check_lines(items: list[OrderLine], note: str, preference: str) -> tuple[str
 def:pub place_order(
     table_code: str, items: list[OrderLine], allergy_note: str, via_ai: bool = False, preference_note: str = ""
 ) -> PlaceResult {
-    found = find_table(table_code);
+    found = restaurant_for_table(table_code);
     if found is None {
         return refuse("This table link isn't valid.");
     }
     (rest, table) = found;
+    if not rest.menu_published {
+        return refuse("This restaurant's menu isn't ready yet. Please ask your waiter.");
+    }
     note = allergy_note.strip();
     preference = preference_note.strip();
     (problem, wanted) = check_lines(items, note, preference);
@@ -169,7 +172,7 @@ def:pub place_order(
 
 """This table's orders, newest first, for the guest's status card."""
 def:pub table_orders(table_code: str) -> list[OrderView] {
-    found = find_table(table_code);
+    found = restaurant_for_table(table_code);
     if found is None {
         return [];
     }

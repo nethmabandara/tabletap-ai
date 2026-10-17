@@ -65,37 +65,10 @@ def section_views(rest: Restaurant) -> list[SectionView] {
     return views;
 }
 
-"""Guest menu for a table link. Finds the restaurant through the table code, never "the first one"."""
-def:pub get_menu(table_code: str) -> MenuView {
-    published = [r for r in [root.shared -->[?:Restaurant]] if r.menu_published];
-    if not published {
-        return MenuView(status="coming_soon");
-    }
-    for rest in published {
-        for table in [rest ->:HasTable:-> [?:Table]] {
-            if table.code == table_code {
-                return MenuView(
-                    status="ready", restaurant=rest.name, table=table.label,
-                    sections=section_views(rest)
-                );
-            }
-        }
-    }
-    return MenuView(status="invalid");
-}
-
-"""Name of the caller's own restaurant ('' if none yet). Shown on the dashboard."""
-def:protect my_restaurant_name -> str {
-    rest = my_restaurant();
-    return rest.name if rest is not None else "";
-}
-
-"""Find the published restaurant and table for a table code. None if the link is not valid."""
-def find_table(table_code: str) -> tuple[Restaurant, Table] | None {
+"""The restaurant and table that own a table code. Looks through ALL restaurants, published or not.
+This is the ONE way guest-side code finds a restaurant: by table code, never "the first one". None if no table has this code."""
+def restaurant_for_table(table_code: str) -> tuple[Restaurant, Table] | None {
     for rest in [root.shared -->[?:Restaurant]] {
-        if not rest.menu_published {
-            continue;
-        }
         for table in [rest ->:HasTable:-> [?:Table]] {
             if table.code == table_code {
                 return (rest, table);
@@ -103,6 +76,35 @@ def find_table(table_code: str) -> tuple[Restaurant, Table] | None {
         }
     }
     return None;
+}
+
+"""Every table code in use by any restaurant (codes must be unique across all of them)."""
+def all_table_codes -> list[str] {
+    codes: list[str] = [];
+    for rest in [root.shared -->[?:Restaurant]] {
+        codes += [t.code for t in [rest ->:HasTable:-> [?:Table]]];
+    }
+    return codes;
+}
+
+"""Guest menu for a table link. ready, coming_soon (restaurant has no published menu yet) or invalid."""
+def:pub get_menu(table_code: str) -> MenuView {
+    found = restaurant_for_table(table_code);
+    if found is None {
+        # Before any restaurant exists every link says "coming soon" (S-01); afterwards an unknown code is invalid.
+        return MenuView(status="invalid" if len([root.shared -->[?:Restaurant]]) > 0 else "coming_soon");
+    }
+    (rest, table) = found;
+    if not rest.menu_published {
+        return MenuView(status="coming_soon", restaurant=rest.name, table=table.label);
+    }
+    return MenuView(status="ready", restaurant=rest.name, table=table.label, sections=section_views(rest));
+}
+
+"""Name of the caller's own restaurant ('' if none yet). Shown on the dashboard."""
+def:protect my_restaurant_name -> str {
+    rest = my_restaurant();
+    return rest.name if rest is not None else "";
 }
 
 """Every dish of a restaurant, across its sections."""
