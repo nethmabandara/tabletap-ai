@@ -30,3 +30,6 @@ watchdog = ">=3.0.0"
 
 
 [client]
+
+[byllm.model]
+default_model = "claude-haiku-5-5"
