@@ -39,7 +39,7 @@ glob RADIUS_CARD = 16,
      SP_4 = 24,
      SP_5 = 32;
 
-def page_style() -> dict[str, str] {
+def page_style -> dict[str, str] {
     return {
         "minHeight": "100vh",
         "backgroundColor": GROUND,
@@ -50,7 +50,7 @@ def page_style() -> dict[str, str] {
     };
 }
 
-def card_style() -> dict[str, str] {
+def card_style -> dict[str, str] {
     return {
         "backgroundColor": SURFACE,
         "border": f"1px solid {LINE}",
@@ -86,6 +86,6 @@ def pill_style(fg: str, bg: str) -> dict[str, str] {
     };
 }
 
-def mono_style() -> dict[str, str] {
+def mono_style -> dict[str, str] {
     return {"fontFamily": FONT_MONO};
 }
