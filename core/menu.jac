@@ -50,6 +50,7 @@ obj MenuView {
     has status: str,
         restaurant: str = "",
         table: str = "",
+        music_mode: str = "off",
         sections: list[SectionView] = [];
 }
 
@@ -98,7 +99,9 @@ def:pub get_menu(table_code: str) -> MenuView {
     if not rest.menu_published {
         return MenuView(status="coming_soon", restaurant=rest.name, table=table.label);
     }
-    return MenuView(status="ready", restaurant=rest.name, table=table.label, sections=section_views(rest));
+    return MenuView(
+        status="ready", restaurant=rest.name, table=table.label, music_mode=rest.music_mode, sections=section_views(rest)
+    );
 }
 
 """Name of the caller's own restaurant ('' if none yet). Shown on the dashboard."""

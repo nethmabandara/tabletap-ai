@@ -8,6 +8,8 @@ import from core.menu_draft { get_draft }
 import from core.menu_edit { add_draft_dish, update_draft_dish, delete_draft_dish, discard_draft }
 import from core.menu_publish { publish_draft }
 import from core.restaurants { create_restaurant, restaurant_status, table_links }
+import from core.dj { ask_dj }
+import from core.music { send_song_request, table_requests, music_queue, answer_request }
 import from core.kitchen { kitchen_orders, set_order_status, kitchen_dishes, set_sold_out }
 
 def:pub app(children: any) -> JsxElement {

@@ -92,6 +92,10 @@ def stop_server(proc: any) {
     }
 }
 
+def send_request(base: str, code: str, song: str) -> any {
+    return call(base, "send_song_request", {"table_code": code, "song": song, "artist": "Test Artist", "message": "hello", "wish": "a wish"});
+}
+
 def dish_names(menu: any) -> list[str] {
     return [d["name"] for s in menu["sections"] for d in s["dishes"]];
 }
@@ -218,6 +222,30 @@ test "two managers, two restaurants: nothing leaks between them (real logins, re
         assert len(board1["orders"]) == 1 and board1["orders"][0]["table"] == "Table 5";
         assert not call(base, "set_order_status", {"order_id": board2["orders"][0]["id"], "new_status": "preparing"}, t1)["ok"];
         assert call(base, "set_order_status", {"order_id": board2["orders"][0]["id"], "new_status": "preparing"}, t2)["ok"];
+
+        # Music (G-05, MU-01): Wet Water is on "both" and takes requests; Cafe Two is "off" and does not.
+        assert send_request(base, "t5", "Integration Song One")["ok"] and send_request(base, "t5", "Integration Song Two")["ok"];
+        third = send_request(base, "t5", "Integration Song Three");
+        assert not third["ok"] and "already has 2 requests waiting" in third["message"];
+        assert send_request(base, "zzzzzz", "Nowhere Song")["message"] == "This table link isn't valid.";
+        assert send_request(base, codes2[1], "Cafe Two Song")["message"] == "Song requests are not open right now.";
+        closed = call(base, "ask_dj", {"table_code": codes2[1], "wish": "something nice", "not_these": []});
+        assert not closed["ok"] and closed["message"] == "Song requests are not open right now.";
+        # No API key here, so the AI call fails harmlessly and the guest gets the friendly message.
+        busy = call(base, "ask_dj", {"table_code": "t5", "wish": "something romantic", "not_these": []});
+        assert not busy["ok"] and busy["message"] == "The AI DJ is busy right now. You can type a song yourself.";
+        queue1 = call(base, "music_queue", {}, t1);
+        assert queue1["ok"] and queue1["restaurant"] == "Wet Water Resort" and queue1["mode"] == "both" and len(queue1["requests"]) == 2;
+        assert [q["song"] for q in queue1["requests"]] == ["Integration Song One", "Integration Song Two"];
+        queue2 = call(base, "music_queue", {}, t2);
+        assert queue2["ok"] and queue2["restaurant"] == "Cafe Two" and queue2["requests"] == [] and queue2["mode"] == "off";
+        stolen_answer = call(base, "answer_request", {"request_id": queue1["requests"][0]["id"], "accept": True}, t2);
+        assert not stolen_answer["ok"] and "couldn't find that request" in stolen_answer["message"];
+        assert call(base, "answer_request", {"request_id": queue1["requests"][0]["id"], "accept": True}, t1)["ok"];
+        assert call(base, "answer_request", {"request_id": queue1["requests"][1]["id"], "accept": False}, t1)["ok"];
+        statuses = {r["song"]: r["status"] for r in call(base, "table_requests", {"table_code": "t5"})};
+        assert statuses == {"Integration Song One": "accepted", "Integration Song Two": "skipped"};
+        assert call(base, "music_queue", {}, t1)["requests"] == [];
     } finally {
         stop_server(proc);
         mine = [name for (name, owner) in db_names().items() if owner.startswith(app)];
