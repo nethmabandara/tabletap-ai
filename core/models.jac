@@ -75,3 +75,14 @@ edge Contains: Order --> OrderItem {}
 edge HasSong: Restaurant --> Song {}
 edge Got: Song --> Vote {}
 edge Requested: Table --> SongRequest {}
+
+# Menu Setup (M-02, M-03): the draft is kept apart from the live menu until the manager publishes.
+node DraftMenu {
+    has created_at: str = "",
+        photo_count: int = 0,
+        steps: list[str] = [],
+        failed: list[int] = [];
+}
+
+edge HasDraft: Restaurant --> DraftMenu {}
+edge DraftHasSection: DraftMenu --> Section {}
