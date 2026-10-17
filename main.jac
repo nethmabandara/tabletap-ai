@@ -2,6 +2,7 @@
 
 import from core.theme { FONTS_URL, GROUND }
 import from core.orders { place_order, table_orders }
+import from core.waiter { ask_waiter }
 import from core.kitchen { kitchen_orders, set_order_status, kitchen_dishes, set_sold_out }
 
 def:pub app(children: any) -> JsxElement {

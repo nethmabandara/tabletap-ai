@@ -35,6 +35,7 @@ node Table {
 node Order {
     has status: str = "sent",
         allergy_note: str = "",
+        preference_note: str = "",
         created_at: str = "",
         via_ai: bool = False;
 }

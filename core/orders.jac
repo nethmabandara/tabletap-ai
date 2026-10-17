@@ -39,6 +39,8 @@ obj OrderView {
         table: str,
         status: str,
         allergy_note: str,
+        preference_note: str,
+        via_ai: bool,
         minutes_ago: int,
         total: int,
         items: list[OrderItemView];
@@ -68,17 +70,18 @@ def order_view(order: Order, table: Table) -> OrderView {
     total = sum([i.price * i.qty for i in items]);
     return OrderView(
         id=jid(order), table=table.label, status=order.status, allergy_note=order.allergy_note,
+        preference_note=getattr(order, "preference_note", ""), via_ai=order.via_ai,
         minutes_ago=int(seconds_since(order.created_at) // 60), total=total, items=items
     );
 }
 
 """Same dishes, quantities and note? Used to refuse a double tap within a few seconds."""
-def same_order(order: Order, wanted: dict[str, int], note: str) -> bool {
+def same_order(order: Order, wanted: dict[str, int], note: str, preference: str) -> bool {
     have: dict[str, int] = {};
     for i in order_items(order) {
         have[i.dish_name] = have.get(i.dish_name, 0) + i.qty;
     }
-    return have == wanted and order.allergy_note == note;
+    return have == wanted and order.allergy_note == note and getattr(order, "preference_note", "") == preference;
 }
 
 """Only the manager who owns the restaurant may change this record. Nobody else gets access."""
@@ -89,7 +92,7 @@ def share_with_owner(rest: Restaurant, target: Order | OrderItem) {
 }
 
 """Check the cart. Returns (message, merged quantities by dish id); message is '' when fine."""
-def check_lines(items: list[OrderLine], note: str) -> tuple[str, dict[str, int]] {
+def check_lines(items: list[OrderLine], note: str, preference: str) -> tuple[str, dict[str, int]] {
     wanted: dict[str, int] = {};
     if len(items) == 0 {
         return ("Your order is empty. Please add a dish first.", wanted);
@@ -99,6 +102,9 @@ def check_lines(items: list[OrderLine], note: str) -> tuple[str, dict[str, int]]
     }
     if len(note) > MAX_NOTE {
         return (f"Your allergy note is too long (up to {MAX_NOTE} characters). Please shorten it.", wanted);
+    }
+    if len(preference) > MAX_NOTE {
+        return (f"Your preferences note is too long (up to {MAX_NOTE} characters). Please shorten it.", wanted);
     }
     for line in items {
         if line.qty < 1 {
@@ -113,14 +119,17 @@ def check_lines(items: list[OrderLine], note: str) -> tuple[str, dict[str, int]]
 }
 
 """Guest sends the cart. Creates one Order only if every check passes."""
-def:pub place_order(table_code: str, items: list[OrderLine], allergy_note: str) -> PlaceResult {
+def:pub place_order(
+    table_code: str, items: list[OrderLine], allergy_note: str, via_ai: bool = False, preference_note: str = ""
+) -> PlaceResult {
     found = find_table(table_code);
     if found is None {
         return refuse("This table link isn't valid.");
     }
     (rest, table) = found;
     note = allergy_note.strip();
-    (problem, wanted) = check_lines(items, note);
+    preference = preference_note.strip();
+    (problem, wanted) = check_lines(items, note, preference);
     if problem != "" {
         return refuse(problem);
     }
@@ -140,11 +149,13 @@ def:pub place_order(table_code: str, items: list[OrderLine], allergy_note: str) 
         named[dish.name] = named.get(dish.name, 0) + qty;
     }
     for earlier in [table ->:Placed:-> [?:Order]] {
-        if seconds_since(earlier.created_at) < DUPLICATE_SECONDS and same_order(earlier, named, note) {
+        if seconds_since(earlier.created_at) < DUPLICATE_SECONDS and same_order(earlier, named, note, preference) {
             return refuse("This order was just sent. Please wait a few seconds before sending it again.");
         }
     }
-    order = table +>:Placed:+> Order(status="sent", allergy_note=note, created_at=now_iso());
+    order = table +>:Placed:+> Order(
+        status="sent", allergy_note=note, preference_note=preference, via_ai=via_ai, created_at=now_iso()
+    );
     share_with_owner(rest, order);
     total = 0;
     for (dish_id, qty) in wanted.items() {

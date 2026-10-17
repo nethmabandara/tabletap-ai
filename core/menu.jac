@@ -2,6 +2,7 @@
 
 import from .models { Restaurant, Section, Dish, Table, Manages, HasSection, HasDish, HasTable }
 import from .seed { build_wet_water }
+import from .waiter_safety { DishFacts }
 
 """The restaurant the caller manages, found through their Manages edge.
 Also records the manager's root on it (older restaurants lack this), so guest orders can be shared with the owner only."""
@@ -111,4 +112,18 @@ def all_dishes(rest: Restaurant) -> list[Dish] {
         dishes += [sec ->:HasDish:-> [?:Dish]];
     }
     return dishes;
+}
+
+"""Plain facts about every dish of ONE restaurant, for the AI waiter and its safety checks."""
+def dish_facts(rest: Restaurant) -> list[DishFacts] {
+    facts: list[DishFacts] = [];
+    for sec in sorted([rest ->:HasSection:-> [?:Section]], key=lambda (s: Section) { s.position; }) {
+        for d in sorted([sec ->:HasDish:-> [?:Dish]], key=lambda (d: Dish) { d.position; }) {
+            facts.append(DishFacts(
+                id=jid(d), name=d.name, price=d.price, allergens=d.allergens,
+                is_veg=d.is_veg, sold_out=d.sold_out, section=sec.name
+            ));
+        }
+    }
+    return facts;
 }
