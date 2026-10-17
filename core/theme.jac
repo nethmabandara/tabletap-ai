@@ -24,8 +24,9 @@ glob WARN_FG = "#92400E",
      INFO_FG = "#075985",
      INFO_BG = "#E0F2FE";
 
-# Overlay behind the order sheet
-glob SCRIM = "rgba(20, 22, 26, 0.5)";
+# Overlay behind the order sheet, and the shadow under floating panels
+glob SCRIM = "rgba(20, 22, 26, 0.5)",
+     SHADOW = "0 12px 24px rgba(20, 22, 26, 0.18)";
 
 # Fonts
 glob FONT_TEXT = "'Geist', system-ui, sans-serif",

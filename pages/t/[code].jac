@@ -7,8 +7,11 @@ import from ...core.menu { get_menu, MenuView, DishView }
 import from ...core.orders { place_order, table_orders, OrderLine, OrderView, PlaceResult }
 import from ...core.theme { page_style, card_style, pill_style, INK, MUTED, ACCENT, ACCENT_SOFT, SURFACE, LINE, VEG_FG, VEG_BG, SP_3 }
 import from ...ui.guest { MenuHeader, SectionChips, MenuList, WaiterBanner, section_id }
-import from ...ui.cart { CartBar, OrderSheet, StatusCard }
+import from ...ui.cart { CartBar, OrderSheet, StatusStrip, StatusPanel }
 import from ...ui.waiter { WaiterScreen }
+
+# Scroll events caused by the page itself (the strip appearing) must not close the panel.
+glob SCROLL_GUARD: dict[str, float] = {"until": 0.0};
 
 def:pub TablePage -> JsxPage {
     has menu: MenuView | None = None,
@@ -21,7 +24,12 @@ def:pub TablePage -> JsxPage {
         note: str = "",
         message: str = "",
         notice: str = "",
-        view: str = "menu";
+        view: str = "menu",
+        orders_loaded: bool = False,
+        seen_sig: str = "",
+        seen_ready: bool = False,
+        panel_mode: str = "closed",
+        panel_stamp: int = 0;
     params = useParams();
     code: str = params["code"];
 
@@ -29,6 +37,7 @@ def:pub TablePage -> JsxPage {
         try {
             menu = await get_menu(code);
             orders = await table_orders(code);
+            orders_loaded = True;
             failed = False;
         } except Exception {
             failed = True;
@@ -111,6 +120,42 @@ def:pub TablePage -> JsxPage {
         sending = False;
     }
 
+    def toggle_panel {
+        panel_mode = "closed" if panel_mode != "closed" else "pinned";
+    }
+
+    orders_sig = "|".join([o.id + ":" + o.status for o in orders]);
+
+    # Open the cards after an order is sent or when a status changes (not for orders already there on arrival).
+    can with [orders_sig] entry {
+        if orders_loaded {
+            if seen_ready and orders_sig != seen_sig and orders_sig != "" {
+                SCROLL_GUARD["until"] = Date.now() + 700;
+                panel_mode = "pinned" if panel_mode == "pinned" else "auto";
+                panel_stamp = panel_stamp + 1;
+            }
+            seen_sig = orders_sig;
+            seen_ready = True;
+        }
+    }
+
+    # An automatically opened panel closes itself after 5 seconds.
+    useEffect(lambda {
+        timer = setTimeout(lambda { panel_mode = "closed"; }, 5000) if panel_mode == "auto" else None;
+        return lambda { if timer { clearTimeout(timer); } };
+    }, [panel_mode, panel_stamp]);
+
+    # Scrolling away closes the panel.
+    useEffect(lambda {
+        on_scroll = lambda {
+            if Date.now() > SCROLL_GUARD["until"] and window.scrollY > 24 {
+                panel_mode = "closed";
+            }
+        };
+        window.addEventListener("scroll", on_scroll);
+        return lambda { window.removeEventListener("scroll", on_scroll); };
+    }, []);
+
     useEffect(lambda {
         refresh();
         timer = setInterval(lambda { refresh(); }, 3000);
@@ -147,15 +192,18 @@ def:pub TablePage -> JsxPage {
                     "padding": f"{SP_3}px", "borderBottom": f"1px solid {LINE}"
                 }}>
                     <MenuHeader restaurant={menu.restaurant} table={menu.table}/>
+                    {if len(orders) > 0 {
+                        <StatusStrip orders={orders} open={panel_mode != "closed"} onToggle={toggle_panel}/>
+                    }}
                     <WaiterBanner onOpen={open_waiter}/>
                     <SectionChips sections={menu.sections} active={active if active else menu.sections[0].name} onPick={pick}/>
+                    {if panel_mode != "closed" and len(orders) > 0 {
+                        <StatusPanel orders={orders}/>
+                    }}
                 </div>
                 <div style={{"padding": f"0 {SP_3}px 120px"}}>
                     {if notice != "" {
                         <p style={pill_style(VEG_FG, VEG_BG) | {"display": "block", "margin": f"{SP_3}px 0 0"}}>{notice}</p>
-                    }}
-                    {for o in orders[:3] {
-                        <StatusCard key={o.id} order={o}/>
                     }}
                     <MenuList sections={menu.sections} cart={cart} onAdd={add} onRemove={remove}/>
                 </div>

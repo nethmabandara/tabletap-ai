@@ -17,7 +17,9 @@ import from .guest { money, NotePills }
 
 glob BUSY = "The AI waiter is busy right now. You can still add dishes from the menu.",
      SEND_FAILED = "We couldn't send your order. Please try again.",
-     MAX_MESSAGE = 500;
+     MAX_MESSAGE = 500,
+     BOX_MIN = 48,
+     BOX_MAX = 144;
 
 def plan_text(plan: WaiterPlan) -> str {
     return "Suggested: " + ", ".join([str(i.qty) + " x " + i.dish_name for i in plan.items]) + ". Total " + money(plan.total);
@@ -140,6 +142,15 @@ def:pub WaiterScreen(code: str, table: str, onBack: any, onSent: any) -> JsxElem
         }
     }
 
+    # Grow the box with the text: 1 line up to 5 lines, then it scrolls inside.
+    can with [text] entry {
+        el: any = document.getElementById("waiter-input");
+        if el {
+            el.style.height = "auto";
+            el.style.height = str(max(BOX_MIN, min(el.scrollHeight, BOX_MAX))) + "px";
+        }
+    }
+
     guest_lines = [t.text for t in history if t.role == "guest"] + ([pending] if pending != "" else []);
     busy = working or sending;
     return <div style={{"maxWidth": "480px", "margin": "0 auto", "minHeight": "100vh", "backgroundColor": GROUND, "fontFamily": FONT_TEXT}}>
@@ -150,7 +161,7 @@ def:pub WaiterScreen(code: str, table: str, onBack: any, onSent: any) -> JsxElem
                 <div style={{"color": MUTED, "fontSize": "15px"}}>{table + " · nothing is ordered until you confirm"}</div>
             </div>
         </div>
-        <div style={{"padding": f"{SP_3}px {SP_3}px 120px"}}>
+        <div style={{"padding": f"{SP_3}px {SP_3}px 240px"}}>
             {if len(guest_lines) == 0 and plan is None {
                 <p style={{"color": MUTED, "textAlign": "center", "marginTop": f"{SP_4}px"}}>Tell us how many you are, any diets or allergies, and your budget.</p>
             }}
@@ -174,22 +185,34 @@ def:pub WaiterScreen(code: str, table: str, onBack: any, onSent: any) -> JsxElem
         <div style={{"position": "fixed", "left": "0", "right": "0", "bottom": "0", "display": "flex", "justifyContent": "center", "zIndex": "20"}}>
             <form
                 onSubmit={lambda (e: FormEvent) { e.preventDefault(); ask(); }}
-                style={{"width": "100%", "maxWidth": "480px", "boxSizing": "border-box", "display": "flex", "gap": f"{SP_2}px", "padding": f"{SP_3}px", "backgroundColor": SURFACE, "borderTop": f"1px solid {LINE}"}}
+                style={{"width": "100%", "maxWidth": "480px", "boxSizing": "border-box", "display": "flex", "alignItems": "flex-end", "gap": f"{SP_2}px", "padding": f"{SP_3}px", "backgroundColor": SURFACE, "borderTop": f"1px solid {LINE}"}}
             >
-                <input
-                    id="waiter-input"
-                    value={text}
-                    maxLength={MAX_MESSAGE}
-                    disabled={busy}
-                    placeholder={"Ask for changes..." if plan is not None else "Tell the waiter what you need..."}
-                    onChange={lambda (e: ChangeEvent) { text = e.target.value; }}
-                    style={{"flex": "1", "minHeight": "48px", "padding": f"0 {SP_3}px", "border": f"1px solid {LINE}", "borderRadius": f"{RADIUS_BUTTON}px", "fontFamily": FONT_TEXT, "fontSize": "16px", "color": INK, "backgroundColor": SURFACE}}
-                />
+                <div style={{"flex": "1", "minWidth": "0"}}>
+                    <textarea
+                        id="waiter-input"
+                        rows={1}
+                        value={text}
+                        maxLength={MAX_MESSAGE}
+                        disabled={busy}
+                        placeholder={"Ask for changes..." if plan is not None else "Tell the waiter what you need..."}
+                        onChange={lambda (e: ChangeEvent) { text = e.target.value; }}
+                        style={{
+                            "display": "block", "width": "100%", "boxSizing": "border-box", "resize": "none",
+                            "minHeight": f"{BOX_MIN}px", "maxHeight": f"{BOX_MAX}px", "overflowY": "auto",
+                            "padding": f"{SP_2}px {SP_3}px", "lineHeight": "24px", "border": f"1px solid {LINE}",
+                            "borderRadius": f"{RADIUS_BUTTON}px", "fontFamily": FONT_TEXT, "fontSize": "16px",
+                            "color": INK, "backgroundColor": SURFACE
+                        }}
+                    />
+                    <div style={{"textAlign": "right", "fontSize": "12px", "marginTop": "4px", "color": WARN_FG if len(text) >= 450 else MUTED}}>
+                        {str(len(text)) + " / " + str(MAX_MESSAGE)}
+                    </div>
+                </div>
                 <button
                     type="submit"
                     aria-label="Send"
                     disabled={busy or text.strip() == ""}
-                    style={{"width": "56px", "minHeight": "48px", "border": "none", "borderRadius": f"{RADIUS_BUTTON}px", "backgroundColor": INK, "color": SURFACE, "fontSize": "22px", "cursor": "pointer", "opacity": "0.5" if (busy or text.strip() == "") else "1"}}
+                    style={{"width": "56px", "height": f"{BOX_MIN}px", "marginBottom": "20px", "border": "none", "borderRadius": f"{RADIUS_BUTTON}px", "backgroundColor": INK, "color": SURFACE, "fontSize": "22px", "cursor": "pointer", "opacity": "0.5" if (busy or text.strip() == "") else "1"}}
                 >↑</button>
             </form>
         </div>

@@ -5,7 +5,7 @@ import from ..core.menu { DishView }
 import from ..core.orders { OrderView }
 import from ..core.theme {
     button_style, card_style, pill_style, step_style, mono_style,
-    INK, MUTED, BODY, GROUND, SURFACE, LINE, ACCENT, ACCENT_SOFT, SCRIM, FONT_TEXT,
+    INK, MUTED, BODY, GROUND, SURFACE, LINE, ACCENT, ACCENT_SOFT, SCRIM, SHADOW, FONT_TEXT,
     ALLERGY_FG, ALLERGY_BG, WARN_FG, WARN_BG, VEG_FG, VEG_BG, INFO_FG, INFO_BG,
     RADIUS_CARD, RADIUS_BUTTON, SP_1, SP_2, SP_3, SP_4
 }
@@ -125,5 +125,47 @@ def:pub StatusCard(order: OrderView) -> JsxElement {
                 ) | {"flex": "1", "textAlign": "center", "fontWeight": "600" if i == here else "400"}}>{STEP_LABEL[step]}</span>
             }}
         </div>
+    </div>
+}
+
+# Status -> (strip text, text colour, background). Same colours as the kitchen columns.
+glob STATUS_LOOK: dict[str, list[str]] = {
+    "sent": ["Order sent", WARN_FG, WARN_BG],
+    "preparing": ["Order sent · Preparing", INFO_FG, INFO_BG],
+    "ready": ["Order sent · Ready", VEG_FG, VEG_BG]
+};
+
+"""One fixed-height line: the latest order's status and, with several orders, a count. Tap to open or close the cards."""
+def:pub StatusStrip(orders: list[OrderView], open: bool, onToggle: any) -> JsxElement {
+    latest = orders[0];
+    look = STATUS_LOOK.get(latest.status, STATUS_LOOK["sent"]);
+    extra = (str(len(orders)) + " orders  ") if len(orders) > 1 else "";
+    <button
+        aria-expanded={open}
+        aria-label="Order status"
+        onClick={lambda { onToggle(); }}
+        style={{
+            "display": "flex", "justifyContent": "space-between", "alignItems": "center", "width": "100%",
+            "boxSizing": "border-box", "height": "36px", "marginTop": f"{SP_2}px", "padding": f"0 {SP_3}px",
+            "border": "none", "borderRadius": f"{RADIUS_BUTTON}px", "backgroundColor": look[2], "color": look[1],
+            "fontFamily": FONT_TEXT, "fontSize": "15px", "fontWeight": "600", "cursor": "pointer",
+            "whiteSpace": "nowrap", "overflow": "hidden"
+        }}
+    >
+        <span style={{"overflow": "hidden", "textOverflow": "ellipsis"}}>{look[0]}</span>
+        <span>{extra + ("▴" if open else "▾")}</span>
+    </button>
+}
+
+"""The larger status cards. Floats under the sticky header, so it never pushes the dishes."""
+def:pub StatusPanel(orders: list[OrderView]) -> JsxElement {
+    <div style={{
+        "position": "absolute", "left": "0", "right": "0", "top": "100%", "maxHeight": "60vh", "overflowY": "auto",
+        "boxSizing": "border-box", "padding": f"0 {SP_3}px {SP_3}px", "backgroundColor": GROUND,
+        "borderBottom": f"1px solid {LINE}", "boxShadow": SHADOW
+    }}>
+        {for o in orders[:3] {
+            <StatusCard key={o.id} order={o}/>
+        }}
     </div>
 }
