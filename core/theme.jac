@@ -24,6 +24,9 @@ glob WARN_FG = "#92400E",
      INFO_FG = "#075985",
      INFO_BG = "#E0F2FE";
 
+# Overlay behind the order sheet
+glob SCRIM = "rgba(20, 22, 26, 0.5)";
+
 # Fonts
 glob FONT_TEXT = "'Geist', system-ui, sans-serif",
      FONT_MONO = "'Geist Mono', ui-monospace, monospace",
@@ -102,6 +105,21 @@ def chip_style(active: bool) -> dict[str, str] {
         "fontFamily": FONT_TEXT,
         "fontSize": "16px",
         "fontWeight": "500",
+        "cursor": "pointer"
+    };
+}
+
+def step_style(filled: bool) -> dict[str, str] {
+    return {
+        "width": "44px",
+        "height": "44px",
+        "borderRadius": f"{RADIUS_BUTTON}px",
+        "border": "none" if filled else f"1px solid {LINE}",
+        "backgroundColor": ACCENT if filled else SURFACE,
+        "color": SURFACE if filled else ACCENT,
+        "fontFamily": FONT_TEXT,
+        "fontSize": "24px",
+        "lineHeight": "1",
         "cursor": "pointer"
     };
 }

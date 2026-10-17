@@ -2,7 +2,7 @@
 
 import from ..core.menu { DishView, SectionView }
 import from ..core.theme {
-    pill_style, chip_style, mono_style,
+    pill_style, chip_style, mono_style, step_style,
     INK, MUTED, BODY, GROUND, SURFACE, LINE, ACCENT, ACCENT_SOFT, FONT_TEXT,
     WARN_FG, WARN_BG, VEG_FG, VEG_BG, ALLERGY_FG, ALLERGY_BG, INFO_FG, INFO_BG,
     RADIUS_CARD, SP_1, SP_2, SP_3, SP_4
@@ -20,7 +20,7 @@ glob TAG_LOOK: dict[str, list[str]] = {
     "gluten": ["Contains gluten", ALLERGY_FG, ALLERGY_BG]
 };
 
-def money(price: int) -> str {
+def:pub money(price: int) -> str {
     digits = str(price);
     if len(digits) > 3 {
         return "Rs " + digits[:len(digits) - 3] + "," + digits[len(digits) - 3:];
@@ -61,7 +61,7 @@ def:pub TagPill(tag: str) -> JsxElement {
     <span style={pill_style(look[1], look[2]) | {"marginRight": "6px"}}>{look[0]}</span>
 }
 
-def:pub DishCard(dish: DishView) -> JsxElement {
+def:pub DishCard(dish: DishView, qty: int, onAdd: any, onRemove: any) -> JsxElement {
     card = {
         "display": "flex",
         "gap": f"{SP_3}px",
@@ -93,10 +93,19 @@ def:pub DishCard(dish: DishView) -> JsxElement {
                 <div style={mono_style() | {"color": INK, "fontSize": "16px", "marginTop": "6px"}}>{money(dish.price)}</div>
             }}
         </div>
+        {if not dish.sold_out {
+            <div style={{"display": "flex", "alignItems": "center", "gap": f"{SP_1}px"}}>
+                {if qty > 0 {
+                    <button style={step_style(False)} aria-label={"Remove one " + dish.name} onClick={lambda { onRemove(dish.id); }}>−</button>
+                    <span style={{"minWidth": "20px", "textAlign": "center", "color": INK, "fontWeight": "600"}}>{qty}</span>
+                }}
+                <button style={step_style(qty > 0)} aria-label={"Add one " + dish.name} disabled={qty >= 20} onClick={lambda { onAdd(dish.id); }}>+</button>
+            </div>
+        }}
     </div>
 }
 
-def:pub MenuList(sections: list[SectionView]) -> JsxElement {
+def:pub MenuList(sections: list[SectionView], cart: dict[str, int], onAdd: any, onRemove: any) -> JsxElement {
     <div>
         {for sec in sections {
             <section key={sec.name} id={section_id(sec.name)} style={{"scrollMarginTop": "180px"}}>
@@ -106,7 +115,7 @@ def:pub MenuList(sections: list[SectionView]) -> JsxElement {
                     "margin": f"{SP_4}px 0 {SP_2}px"
                 }}>{sec.name}</h2>
                 {for d in sec.dishes {
-                    <DishCard key={d.name} dish={d}/>
+                    <DishCard key={d.id} dish={d} qty={cart.get(d.id, 0)} onAdd={onAdd} onRemove={onRemove}/>
                 }}
             </section>
         }}
