@@ -6,8 +6,9 @@ import from "@jac/runtime" { useParams }
 import from ...core.menu { get_menu, MenuView, DishView }
 import from ...core.orders { place_order, table_orders, OrderLine, OrderView, PlaceResult }
 import from ...core.theme { page_style, card_style, pill_style, INK, MUTED, ACCENT, ACCENT_SOFT, SURFACE, LINE, VEG_FG, VEG_BG, SP_3 }
-import from ...ui.guest { MenuHeader, SectionChips, MenuList, section_id }
+import from ...ui.guest { MenuHeader, SectionChips, MenuList, WaiterBanner, section_id }
 import from ...ui.cart { CartBar, OrderSheet, StatusCard }
+import from ...ui.waiter { WaiterScreen }
 
 def:pub TablePage -> JsxPage {
     has menu: MenuView | None = None,
@@ -19,7 +20,8 @@ def:pub TablePage -> JsxPage {
         sending: bool = False,
         note: str = "",
         message: str = "",
-        notice: str = "";
+        notice: str = "",
+        view: str = "menu";
     params = useParams();
     code: str = params["code"];
 
@@ -31,6 +33,21 @@ def:pub TablePage -> JsxPage {
         } except Exception {
             failed = True;
         }
+    }
+
+    def open_waiter {
+        view = "waiter";
+        window.scrollTo(0, 0);
+    }
+
+    def close_waiter {
+        view = "menu";
+    }
+
+    async def waiter_sent(text: str) {
+        notice = text;
+        view = "menu";
+        await refresh();
     }
 
     def pick(name: str) {
@@ -122,33 +139,41 @@ def:pub TablePage -> JsxPage {
         lines = dishes_in_cart();
         count = sum([cart[d.id] for d in lines]);
         total = sum([cart[d.id] * d.price for d in lines]);
-        return <main style={{"maxWidth": "480px", "margin": "0 auto", "minHeight": "100vh"}}>
-            <div style={{
-                "position": "sticky", "top": "0", "zIndex": "10", "backgroundColor": SURFACE,
-                "padding": f"{SP_3}px", "borderBottom": f"1px solid {LINE}"
-            }}>
-                <MenuHeader restaurant={menu.restaurant} table={menu.table}/>
-                <SectionChips sections={menu.sections} active={active if active else menu.sections[0].name} onPick={pick}/>
-            </div>
-            <div style={{"padding": f"0 {SP_3}px 120px"}}>
-                {if notice != "" {
-                    <p style={pill_style(VEG_FG, VEG_BG) | {"display": "block", "margin": f"{SP_3}px 0 0"}}>{notice}</p>
+        return <div>
+            <div style={{"display": "none" if view == "waiter" else "block"}}>
+            <main style={{"maxWidth": "480px", "margin": "0 auto", "minHeight": "100vh"}}>
+                <div style={{
+                    "position": "sticky", "top": "0", "zIndex": "10", "backgroundColor": SURFACE,
+                    "padding": f"{SP_3}px", "borderBottom": f"1px solid {LINE}"
+                }}>
+                    <MenuHeader restaurant={menu.restaurant} table={menu.table}/>
+                    <WaiterBanner onOpen={open_waiter}/>
+                    <SectionChips sections={menu.sections} active={active if active else menu.sections[0].name} onPick={pick}/>
+                </div>
+                <div style={{"padding": f"0 {SP_3}px 120px"}}>
+                    {if notice != "" {
+                        <p style={pill_style(VEG_FG, VEG_BG) | {"display": "block", "margin": f"{SP_3}px 0 0"}}>{notice}</p>
+                    }}
+                    {for o in orders[:3] {
+                        <StatusCard key={o.id} order={o}/>
+                    }}
+                    <MenuList sections={menu.sections} cart={cart} onAdd={add} onRemove={remove}/>
+                </div>
+                {if count > 0 and not sheet_open {
+                    <CartBar count={count} total={total} onOpen={lambda { sheet_open = True; message = ""; }}/>
                 }}
-                {for o in orders[:3] {
-                    <StatusCard key={o.id} order={o}/>
+                {if sheet_open {
+                    <OrderSheet
+                        lines={lines} cart={cart} total={total} note={note} sending={sending} message={message}
+                        onNote={lambda (v: str) { note = v; }} onAdd={add} onRemove={remove}
+                        onClose={lambda { sheet_open = False; }} onSend={send}
+                    />
                 }}
-                <MenuList sections={menu.sections} cart={cart} onAdd={add} onRemove={remove}/>
+            </main>
             </div>
-            {if count > 0 and not sheet_open {
-                <CartBar count={count} total={total} onOpen={lambda { sheet_open = True; message = ""; }}/>
-            }}
-            {if sheet_open {
-                <OrderSheet
-                    lines={lines} cart={cart} total={total} note={note} sending={sending} message={message}
-                    onNote={lambda (v: str) { note = v; }} onAdd={add} onRemove={remove}
-                    onClose={lambda { sheet_open = False; }} onSend={send}
-                />
-            }}
-        </main>;
+            <div style={{"display": "block" if view == "waiter" else "none"}}>
+                <WaiterScreen code={code} table={menu.table} onBack={close_waiter} onSent={waiter_sent}/>
+            </div>
+        </div>;
     }
 }

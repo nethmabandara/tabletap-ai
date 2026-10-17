@@ -9,7 +9,7 @@ import from ..core.theme {
     ALLERGY_FG, ALLERGY_BG, WARN_FG, WARN_BG, VEG_FG, VEG_BG, INFO_FG, INFO_BG,
     RADIUS_CARD, RADIUS_BUTTON, SP_1, SP_2, SP_3, SP_4
 }
-import from .guest { money }
+import from .guest { money, NotePills }
 
 glob MAX_NOTE = 200,
      MAX_QTY = 20,
@@ -117,6 +117,7 @@ def:pub StatusCard(order: OrderView) -> JsxElement {
             <span>{"Your order · " + str(len(order.items)) + (" dish" if len(order.items) == 1 else " dishes")}</span>
             <span style={mono_style() | {"color": MUTED, "fontWeight": "400"}}>{money(order.total)}</span>
         </div>
+        <NotePills allergy={order.allergy_note} preference={order.preference_note}/>
         <div style={{"display": "flex", "gap": f"{SP_1}px", "marginTop": f"{SP_2}px"}}>
             {for (i, step) in enumerate(STEPS) {
                 <span key={step} style={pill_style(

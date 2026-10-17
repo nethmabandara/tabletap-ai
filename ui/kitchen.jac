@@ -56,7 +56,13 @@ def:pub OrderCard(order: OrderView, accent: str, working: bool, onMove: any) -> 
             <div style={{
                 "backgroundColor": ALLERGY_BG, "color": ALLERGY_FG, "fontWeight": "600",
                 "borderRadius": f"{RADIUS_BUTTON}px", "padding": f"{SP_2}px", "marginTop": f"{SP_2}px"
-            }}>{"Allergy: " + order.allergy_note}</div>
+            }}>{order.allergy_note}</div>
+        }}
+        {if order.preference_note != "" {
+            <div style={{
+                "backgroundColor": WARN_BG, "color": WARN_FG, "fontWeight": "600",
+                "borderRadius": f"{RADIUS_BUTTON}px", "padding": f"{SP_2}px", "marginTop": f"{SP_1}px"
+            }}>{order.preference_note}</div>
         }}
         {if order.status == "sent" {
             <button

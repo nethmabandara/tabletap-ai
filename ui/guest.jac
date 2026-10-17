@@ -108,7 +108,7 @@ def:pub DishCard(dish: DishView, qty: int, onAdd: any, onRemove: any) -> JsxElem
 def:pub MenuList(sections: list[SectionView], cart: dict[str, int], onAdd: any, onRemove: any) -> JsxElement {
     <div>
         {for sec in sections {
-            <section key={sec.name} id={section_id(sec.name)} style={{"scrollMarginTop": "180px"}}>
+            <section key={sec.name} id={section_id(sec.name)} style={{"scrollMarginTop": "280px"}}>
                 <h2 style={{
                     "color": MUTED, "fontSize": "14px", "fontWeight": "600",
                     "letterSpacing": "0.08em", "textTransform": "uppercase",
@@ -118,6 +118,39 @@ def:pub MenuList(sections: list[SectionView], cart: dict[str, int], onAdd: any, 
                     <DishCard key={d.id} dish={d} qty={cart.get(d.id, 0)} onAdd={onAdd} onRemove={onRemove}/>
                 }}
             </section>
+        }}
+    </div>
+}
+
+"""The dark 'Ask the AI waiter' banner on the menu."""
+def:pub WaiterBanner(onOpen: any) -> JsxElement {
+    <button
+        onClick={lambda { onOpen(); }}
+        style={{
+            "width": "100%", "marginTop": f"{SP_3}px", "padding": f"{SP_2}px {SP_3}px", "border": "none",
+            "borderRadius": f"{RADIUS_CARD}px", "backgroundColor": INK, "color": SURFACE, "cursor": "pointer",
+            "display": "flex", "alignItems": "center", "gap": f"{SP_3}px", "textAlign": "left", "fontFamily": FONT_TEXT
+        }}
+    >
+        <span style={{
+            "flex": "0 0 48px", "height": "48px", "borderRadius": "12px", "backgroundColor": ACCENT,
+            "display": "flex", "alignItems": "center", "justifyContent": "center", "fontSize": "22px"
+        }}>✦</span>
+        <span>
+            <span style={{"display": "block", "fontSize": "20px", "fontWeight": "600"}}>Ask the AI waiter</span>
+            <span style={{"display": "block", "color": LINE, "fontSize": "15px"}}>Tell us your diets, allergies and budget</span>
+        </span>
+    </button>
+}
+
+"""Allergies in a red pill, preferences in an amber pill. Shows nothing when both are empty."""
+def:pub NotePills(allergy: str, preference: str) -> JsxElement {
+    <div>
+        {if allergy != "" {
+            <span style={pill_style(ALLERGY_FG, ALLERGY_BG) | {"marginRight": "6px", "marginTop": "6px", "fontWeight": "600"}}>{allergy}</span>
+        }}
+        {if preference != "" {
+            <span style={pill_style(WARN_FG, WARN_BG) | {"marginTop": "6px", "fontWeight": "600"}}>{preference}</span>
         }}
     </div>
 }
