@@ -40,8 +40,27 @@ test "allergen notes and prices follow the data model" {
     assert by_name["Vegetable Chop Suey"].is_veg;
 }
 
-test "table link works only after the menu exists" {
+test "get_menu: ready for t5, invalid for unknown code, sections in order" {
     claim_demo_restaurant();
-    assert table_status("t5") == "ready";
-    assert table_status("zzz") == "coming_soon";
+    m = get_menu("t5");
+    assert m.status == "ready";
+    assert m.restaurant == "Wet Water Resort" and m.table == "Table 5";
+    assert len(m.sections) == 6;
+    assert m.sections[0].name == "Rice, Pasta & Noodles";
+    assert m.sections[0].dishes[0].name == "Vegetable Fried Rice";
+    assert m.sections[0].dishes[0].price == 750;
+    assert "vegetarian" in m.sections[0].dishes[0].tags;
+    assert get_menu("zzz").status == "invalid";
+}
+
+test "second claim does nothing" {
+    claim_demo_restaurant();
+    assert demo_claimed();
+    assert claim_demo_restaurant() == False;
+    assert claim_demo_restaurant() == False;
+    demos = [root.shared -->[?:Restaurant, slug == "wet-water"]];
+    assert len(demos) == 1;
+    tables = [demos[0] ->:HasTable:-> [?:Table]];
+    assert len(tables) == 8;
+    assert len([t for t in tables if t.code == "t5"]) == 1;
 }

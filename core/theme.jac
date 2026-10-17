@@ -89,3 +89,19 @@ def pill_style(fg: str, bg: str) -> dict[str, str] {
 def mono_style -> dict[str, str] {
     return {"fontFamily": FONT_MONO};
 }
+
+def chip_style(active: bool) -> dict[str, str] {
+    return {
+        "flex": "0 0 auto",
+        "minHeight": "44px",
+        "padding": f"0 {SP_3}px",
+        "borderRadius": f"{RADIUS_PILL}px",
+        "border": "none",
+        "backgroundColor": INK if active else GROUND,
+        "color": SURFACE if active else BODY,
+        "fontFamily": FONT_TEXT,
+        "fontSize": "16px",
+        "fontWeight": "500",
+        "cursor": "pointer"
+    };
+}
